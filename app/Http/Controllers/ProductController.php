@@ -1,0 +1,216 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Customer;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+
+class ProductController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    // public function index(Request $request)
+    // {
+    //     $searchQuery = $request->get('query');
+    //     $searchCategory = $request->get('category');
+
+    //     $products = Product::query()
+    //         ->when(request('query'), function ($query) use ($searchQuery) {
+    //             $query->where('name', 'like', '%' . $searchQuery . '%');
+    //         })
+    //         ->latest()->paginate(10);
+
+    //     foreach ($products as $product) {
+    //         $product->image_url = Storage::url($product->image);
+    //     }
+
+    //     return response()->json($products);
+    // }
+
+    public function index(Request $request)
+{
+    $searchQuery = $request->get('query');
+    $searchCategory = $request->get('category');
+
+    $products = Product::query()
+        ->when($searchQuery, function ($query) use ($searchQuery) {
+            $query->where('name', 'like', '%' . $searchQuery . '%');
+        })
+        ->when($searchCategory, function ($query) use ($searchCategory) {
+            $query->where('category_id', $searchCategory);
+        })
+        ->latest()
+        ->paginate(20);
+
+    foreach ($products as $product) {
+        $product->image_url = Storage::url($product->image);
+    }
+
+    return response()->json($products);
+}
+
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //  dd($request->all());
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|min:3',
+            'category_id' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+
+        $imgPath = '';
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . $image->getClientOriginalName();
+            $imgPath = $image->storeAs('public/products', $imageName);
+        }
+
+        $product = Product::create([
+            'name' => $request->name,
+            'category_id' => $request->category_id,
+            'quantity' => $request->quantity,
+            'selling_price' => $request->selling_price,
+            'code' => $request->code,
+            'image' => $imgPath,
+        ]);
+
+        return response()->json($product);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Product $product)
+    {
+        return response()->json($product);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Product $product)
+    {
+        return response()->json($product);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Product $product)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|min:3',
+            'category_id' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+
+        $imgPath = '';
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            unlink(storage_path('app/' . $product->image));
+            $imageName = time() . $image->getClientOriginalName();
+            $imgPath = $image->storeAs('public/products', $imageName);
+        }
+
+        if ($request->hasFile('image')) {
+            $product->name = $request->name;
+            $product->category_id = $request->category_id;
+            $product->quantity = $request->quantity;
+            $product->image = $imgPath;
+            $product->update();
+        } else {
+            $product->name = $request->name;
+            $product->category_id = $request->category_id;
+            $product->quantity = $request->quantity;
+            $product->update();
+        }
+
+        return response()->json($product);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Product $product)
+    {
+        $image = $product->image;
+        if ($image) {
+            unlink(storage_path('app/' . $image));
+            $product->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product deleted successfully.',
+            ]);
+        } else {
+
+            $product->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product deleted successfully.',
+            ]);
+        }
+    }
+
+
+    // ------------------ Bulk Delete --------------------
+
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->get('ids');
+
+        if (empty($ids)) {
+            return response()->json([
+                'errors' => true,
+                'message' => 'Products did not selected.',
+            ]);
+        } else {
+            // Fetch products that match the given ids
+            $products = Product::whereIn('id', $ids)->get(['id', 'image']);
+
+            foreach ($products as $product) {
+                $imagePath = $product->image;
+
+                if ($imagePath) {
+                    // Check if the image exists before attempting to delete it
+                    if (Storage::exists($imagePath)) {
+                        // Delete the image from the storage
+                        Storage::delete($imagePath);
+                    }
+                }
+
+                // Delete the product
+                $product->delete();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Products deleted successfully.',
+            ]);
+        }
+    }
+}
