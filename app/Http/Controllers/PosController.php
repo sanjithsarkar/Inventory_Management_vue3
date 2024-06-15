@@ -155,12 +155,13 @@ class PosController extends Controller
 
     public function success()
     {
-        return view('stripe.success'); // You can create a success blade template
+        // return view('products.index'); // You can create a success blade template
+        return redirect(route('products.index'));
     }
 
     public function cancel()
     {
-        return view('stripe.cancel'); // You can create a cancel blade template
+        return redirect(route('orders.index')); // You can create a cancel blade template
     }
 
     public function handleWebhook(Request $request)
