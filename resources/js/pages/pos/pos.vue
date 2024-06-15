@@ -245,12 +245,10 @@ const payByStripe = async () => {
             'Content-Type': 'application/json',
         },
     });
-        const sessionId = response.data.id; // Extract session ID from response data
-
-        console.log('session ID = ', sessionId);
+        const stripeUrl = response.data.url; // Extract session ID from response data
 
         // Redirect to the Stripe checkout page using the retrieved session ID
-        window.location.href = `https://checkout.stripe.com/pay/${sessionId}`;
+        window.location.href = `${stripeUrl}`;
     } catch (error) {
         console.error('Error creating Stripe Checkout session:', error);
         // Handle error

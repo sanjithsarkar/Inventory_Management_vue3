@@ -119,6 +119,8 @@ class PosController extends Controller
     public function payment(Request $request)
     {
         try {
+
+            // dd($request->all());
             // Set the Stripe API key
             Stripe::setApiKey(env('STRIPE_SK'));
             // Stripe::setApiKey(config('stripe.sk'));
@@ -130,7 +132,7 @@ class PosController extends Controller
                     [
                         'price_data' => [
                             'currency' => 'usd',
-                            'unit_amount' => 20 * 100, // Convert to cents
+                            'unit_amount' => ($request->totalAmount) * 100, // Convert to cents
                             'product_data' => [
                                 'name' => "test",
                             ],
@@ -144,7 +146,7 @@ class PosController extends Controller
             ]);
     
             // Return the session ID to the frontend
-            return response()->json(['id' => $response->id]);
+            return response()->json(['url' => $response->url]);
         } catch (\Stripe\Exception\ApiErrorException $e) {
             // Handle the error
             return response()->json(['error' => $e->getMessage()], 500);
