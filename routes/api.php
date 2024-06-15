@@ -52,3 +52,7 @@ Route::get('/today/income', 'App\Http\controllers\OrderController@todayIncome');
 Route::get('/today/due', 'App\Http\controllers\OrderController@todayDue');
 Route::get('/today/expense', 'App\Http\controllers\ExpenseController@todayExpense');
 Route::delete('/products', 'App\Http\controllers\ProductController@bulkDelete');
+Route::post('/stripe/payment', 'App\Http\controllers\PosController@payment');
+Route::get('stripe/success', [PosController::class, 'success'])->name('stripe.success');
+Route::get('stripe/cancel', [PosController::class, 'cancel'])->name('stripe.cancel');
+Route::post('/stripe/webhook', [PosController::class, 'handleWebhook']);

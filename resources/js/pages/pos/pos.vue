@@ -6,6 +6,7 @@ import { useToastr } from '../../Helper/toaster';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import router from '../../router';
+import { loadStripe } from '@stripe/stripe-js';
 
 const toastr = useToastr();
 const productData = ref({});
@@ -235,9 +236,30 @@ const data = reactive({
     customer_id: '',
 });
 
-const orderDone = () => {
-    console.log('data = ', data);
+const payByStripe = async () => {
+    const stripe = await loadStripe('pk_test_51MwQwJIqzT5sBDbDq2bKPnZUycLX9KLYAVUjVL6MyFh4xccFXjaC9vftaOIFQJGvoHdWcbfC7rDt6Y13OwzkDSyb00WRk2Iwpz');
+    try {
+        const response = await axios.post('/api/stripe/payment', data, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+        const sessionId = response.data.id; // Extract session ID from response data
 
+        console.log('session ID = ', sessionId);
+
+        // Redirect to the Stripe checkout page using the retrieved session ID
+        window.location.href = `https://checkout.stripe.com/pay/${sessionId}`;
+    } catch (error) {
+        console.error('Error creating Stripe Checkout session:', error);
+        // Handle error
+    }
+}
+
+
+
+const orderDone = () => {
     axios.post('/api/order/done', data)
         .then(() => {
             // Success logic
@@ -251,7 +273,7 @@ const orderDone = () => {
             data.payby = '';
             data.customer_id = '';
 
-            routerPath.push({ path: '/invoice' });
+            // routerPath.push({ path: '/invoice' });
 
 
             // Clear the input fields
@@ -315,7 +337,8 @@ onMounted(() => {
                                             <button class="badge badge-sm badge-success"
                                                 @click.prevent="increaseIteam(cart.id)">+</button>
                                             <button class="badge badge-sm badge-danger"
-                                                @click.prevent="decreaseItem(cart.id)" v-if="cart.quantity >= 2">-</button>
+                                                @click.prevent="decreaseItem(cart.id)"
+                                                v-if="cart.quantity >= 2">-</button>
                                             <button class="badge badge-sm badge-danger" v-else disabled="">-</button>
                                         </td>
                                         <td>{{ cart.price }}</td>
@@ -371,9 +394,11 @@ onMounted(() => {
                                 <option value="Bkash">Bkash</option>
                                 <option value="Cheaque">Cheaque</option>
                                 <option value="GiftCard">GiftCard</option>
+                                <option value="stripe">Stripe</option>
                             </select>
                             <br>
-                            <button type="submit" class="btn btn-success">Submit</button>
+                            <button v-if="data.payby" @click="payByStripe">Pay Now</button>
+                            <button v-else="" type="submit" class="btn btn-success">Submit</button>
                         </form>
                     </div>
                 </div>
@@ -388,7 +413,8 @@ onMounted(() => {
                             <div class="col-md-3">
                                 <select v-model="selectedCategory">
                                     <option value="" disabled selected>Select category</option>
-                                    <option v-for="category in categoryData.data" :key="category.id" :value="category.id">
+                                    <option v-for="category in categoryData.data" :key="category.id"
+                                        :value="category.id">
                                         {{ category.name }}
                                     </option>
                                 </select>
@@ -410,10 +436,11 @@ onMounted(() => {
                                     <h5 class="card-title">{{ product.name }}</h5><br>
                                     <div class="">
                                         Price: <span class="badge badge-success">{{ product.selling_price }}</span><br>
-                                        Quantity: <span class="badge badge-success" v-if="product.quantity >= 1">Available
+                                        Quantity: <span class="badge badge-success"
+                                            v-if="product.quantity >= 1">Available
                                             {{
-                                                product.quantity
-                                            }}</span>
+                                        product.quantity
+                                    }}</span>
                                         <span class="badge badge-danger" v-else>Stock Out</span>
                                     </div>
                                 </div>
