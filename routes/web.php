@@ -23,13 +23,9 @@ Route::get('/', function () {
 //     return view('index');
 // })->where('vue_capture', '[\/\w\.-]*');
 
-Route::get('/{vue_capture?}',function () {
-    return view('admin.index');
-})->where('vue_capture', '[\/\w\.-]*');
-
-Route::get('/phpinfo', function() {
-    return phpinfo();
-});
+Route::get('/{any}', function () {
+    return view('index');
+})->where('any', '.*');
 
 // Route::post('/stripe/payment', [PosController::class, 'payment'])->name('stripe.payment');
 // Route::get('stripe/success', [PosController::class, 'success'])->name('stripe.success');
