@@ -19,9 +19,17 @@ Route::get('/', function () {
 })->name('home');
 
 
-Route::get('/{vue_capture?}', function () {
-    return view('index');
+// Route::get('/{vue_capture}', function () {
+//     return view('index');
+// })->where('vue_capture', '[\/\w\.-]*');
+
+Route::get('/{vue_capture?}',function () {
+    return view('admin.index');
 })->where('vue_capture', '[\/\w\.-]*');
+
+Route::get('/phpinfo', function() {
+    return phpinfo();
+});
 
 // Route::post('/stripe/payment', [PosController::class, 'payment'])->name('stripe.payment');
 // Route::get('stripe/success', [PosController::class, 'success'])->name('stripe.success');

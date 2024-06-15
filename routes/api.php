@@ -10,6 +10,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\PayPalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,10 @@ Route::get('/today/due', 'App\Http\controllers\OrderController@todayDue');
 Route::get('/today/expense', 'App\Http\controllers\ExpenseController@todayExpense');
 Route::delete('/products', 'App\Http\controllers\ProductController@bulkDelete');
 Route::post('/stripe/payment', 'App\Http\controllers\PosController@payment');
-Route::get('stripe/success', [PosController::class, 'success'])->name('stripe.success');
-Route::get('stripe/cancel', [PosController::class, 'cancel'])->name('stripe.cancel');
+Route::get('/stripe/success', [PosController::class, 'success'])->name('stripe.success');
+Route::get('/stripe/cancel', [PosController::class, 'cancel'])->name('stripe.cancel');
 Route::post('/stripe/webhook', [PosController::class, 'handleWebhook']);
+Route::post('/paypal/payment', 'App\Http\controllers\PayPalController@payment')->name('paypal.payment');
+Route::get('/paypal/cancel', 'App\Http\controllers\PayPalController@cancel')->name('paypal.cancel');
+Route::get('/payment/success', 'App\Http\controllers\PayPalController@success')->name('paypal.success');
+Route::post('/paypal/webhook', [PayPalController::class, 'handleWebhook'])->name('paypal.webhook');

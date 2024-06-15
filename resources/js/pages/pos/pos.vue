@@ -255,6 +255,28 @@ const payByStripe = async () => {
     }
 }
 
+const payByPaypal = async () => {
+    try {
+        const response = await axios.post('/api/paypal/payment', data, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const paypalUrl = response.data.paypalUrl;
+        // const { paypalUrl, user_id: userId, order_id: orderId } = response.data;
+
+        if (paypalUrl) {
+            window.location.href = paypalUrl;
+            // window.location.href = `${paypalUrl}?user_id=${userId}&order_id=${orderId}`;
+        } else {
+            console.error('PayPal URL not found in the response.');
+        }
+    } catch (error) {
+        console.error('Error creating PayPal transaction:', error);
+    }
+}
+
 
 
 const orderDone = () => {
@@ -393,10 +415,12 @@ onMounted(() => {
                                 <option value="Cheaque">Cheaque</option>
                                 <option value="GiftCard">GiftCard</option>
                                 <option value="stripe">Stripe</option>
+                                <option value="paypal">Paypal</option>
                             </select>
                             <br>
-                            <button v-if="data.payby" @click="payByStripe">Pay Now</button>
-                            <button v-else="" type="submit" class="btn btn-success">Submit</button>
+                            <button v-if="data.payby === 'stripe'" @click="payByStripe">Pay Now</button>
+                            <button v-else-if="data.payby === 'paypal'" @click="payByPaypal">Pay By Paypal</button>
+                            <button v-else="" type="submit"  class="btn btn-success">Submit</button>
                         </form>
                     </div>
                 </div>
