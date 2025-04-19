@@ -57,7 +57,7 @@
             <el-table-column prop="date" label="Date" sortable />
             <el-table-column label="Actions" width="180">
                 <template #default="{ row }">
-                    <el-button size="small" @click="showModal(row.id)" type="primary" plain>
+                    <el-button @click="showModal(row.id)" type="primary" plain size="small">
                         <el-icon>
                             <View />
                         </el-icon> View
@@ -75,78 +75,68 @@
 
         <!-- Pagination -->
         <div class="pagination-wrapper">
-            <el-pagination  
-        v-model:current-page="currentPage"  
-        v-model:page-size="pageSize"  
-        :total="pagination.total"  
-        :page-sizes="pageSizes"  
-        layout="total, sizes, prev, pager, next, jumper"  
-        @size-change="handleSizeChange"  
-        @current-change="handleCurrentChange"  
-      />  
+            <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total="pagination.total"
+                :page-sizes="pageSizes" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+                @current-change="handleCurrentChange" />
         </div>
 
         <!-- Order Details Modal -->
-        <el-dialog v-model="isModalVisible" title="Order Details" width="80%" :close-on-click-modal="false">
+        <el-dialog v-model="isModalVisible" title="Order Details" width="80%" center :style="{ marginTop: '10vh' }">
             <el-row :gutter="20">
+                <!-- Customer Info -->
                 <el-col :span="12">
                     <el-card>
                         <template #header>
                             <h4>Customer Information</h4>
                         </template>
-                        <el-descriptions v-if="order[0]?.customer" border column={1}>
+                        <el-descriptions v-if="order[0]?.customer" border :column="1">
                             <el-descriptions-item label="Name">{{ order[0].customer.name }}</el-descriptions-item>
                             <el-descriptions-item label="Email">{{ order[0].customer.email }}</el-descriptions-item>
                             <el-descriptions-item label="Phone">{{ order[0].customer.phone }}</el-descriptions-item>
-                            <el-descriptions-item label="Address">{{ order[0].customer.address }}</el-descriptions-item>
+                            <el-descriptions-item label="Address">{{ order[0].customer.address
+                            }}</el-descriptions-item>
                         </el-descriptions>
-                        <el-empty v-else description="No customer data" />
+                        <el-empty image-size="56" v-else description="No customer data" />
                     </el-card>
                 </el-col>
 
+                <!-- Order Summary -->
                 <el-col :span="12">
                     <el-card>
                         <template #header>
                             <h4>Order Summary</h4>
                         </template>
-                        <el-descriptions border column={1}>
-                            <el-descriptions-item label="Order Number">{{ order[0]?.order_number
-                                }}</el-descriptions-item>
-                            <el-descriptions-item label="Quantity">{{ order[0]?.quantity }}</el-descriptions-item>
-                            <el-descriptions-item label="Subtotal">{{ formatCurrency(order[0]?.subTotal)
-                                }}</el-descriptions-item>
-                            <el-descriptions-item label="Discount">{{ order[0]?.discount }}%</el-descriptions-item>
-                            <el-descriptions-item label="Total">{{ formatCurrency(order[0]?.total)
-                                }}</el-descriptions-item>
-                            <el-descriptions-item label="Paid">{{ formatCurrency(order[0]?.paid)
-                                }}</el-descriptions-item>
-                            <el-descriptions-item label="Due">{{ formatCurrency(order[0]?.due) }}</el-descriptions-item>
-                            <el-descriptions-item label="Payment Method">{{ order[0]?.payby }}</el-descriptions-item>
-                            <el-descriptions-item label="Date">{{ order[0]?.date }}</el-descriptions-item>
+                        <el-descriptions border :column="1">
+                            <el-descriptions-item label="Product Id">{{ orderProduct[0]?.pro_id
+                            }}</el-descriptions-item>
+                            <el-descriptions-item label="Product Name">{{ orderProduct[0]?.name }}</el-descriptions-item>
+                            <el-descriptions-item label="quantity">{{ orderProduct[0]?.quantity }}</el-descriptions-item>
+                            <el-descriptions-item label="price">{{ formatCurrency(orderProduct?.price) }}</el-descriptions-item>
                         </el-descriptions>
                     </el-card>
                 </el-col>
             </el-row>
 
+            <!-- Products -->
             <el-card class="mt-4">
                 <template #header>
                     <h4>Order Products</h4>
                 </template>
-                <el-table :data="orderProduct" border>
+                <el-table :data="order" border>
                     <el-table-column type="index" width="60" />
-                    <el-table-column prop="pro_id" label="Product ID" />
-                    <el-table-column prop="name" label="Product Name" />
-                    <el-table-column prop="quantity" label="Quantity" />
-                    <el-table-column prop="price" label="Price">
-                        <template #default="{ row }">
-                            {{ formatCurrency(row.price) }}
-                        </template>
-                    </el-table-column>
+                    <el-table-column prop="order_number" label="Product ID" />
+                    <el-table-column prop="quantity" label="Product Name" />
+                    <el-table-column prop="subTotal" label="SubTotal" />
+                    <el-table-column prop="discount" label="Discount" />
+                    <el-table-column prop="total" label="Total" />
+                    <el-table-column prop="paid" label="Paid" />
+                    <el-table-column prop="due" label="Due" />
+                    <el-table-column prop="payby" label="PayBy" />
+                    <el-table-column prop="date" label="date" />
                 </el-table>
             </el-card>
-
             <template #footer>
-                <el-button @click="hideModal" type="danger">Close</el-button>
+                <el-button @click="handleDialogClose" type="danger">Close</el-button>
             </template>
         </el-dialog>
     </el-card>
@@ -156,6 +146,7 @@
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { Search, View, Edit } from '@element-plus/icons-vue'
+
 
 const startDate = ref('')
 const endDate = ref('')
@@ -169,82 +160,100 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const timeout = ref(null)
 
-const pagination = ref({  
-  current_page: 1,  
-  per_page: 10,  
-  total: 0,  
-  last_page: 0,  
-})  
+const pagination = ref({
+    current_page: 1,
+    per_page: 10,
+    total: 0,
+    last_page: 0,
+})
 const pageSizes = ref([10, 20, 50, 100])
 
+const dialogVisible = ref(false)
+
 const debouncedGetOrders = () => {
-  loading.value = true
-  clearTimeout(timeout.value)
-  timeout.value = setTimeout(() => {
-    getOrders(currentPage.value)
-  }, 500)
+    loading.value = true
+    clearTimeout(timeout.value)
+    timeout.value = setTimeout(() => {
+        getOrders(currentPage.value)
+    }, 500)
 }
 
 watch([startDate, endDate, searchQuery], debouncedGetOrders, { immediate: true })
 
 onBeforeUnmount(() => clearTimeout(timeout.value))
 
-const getOrders = async (page = 1) => {
-  loading.value = true
-  currentPage.value = page
-  pagination.value.current_page = page
+// const dialogVisible = ref(false)
+const selectedOrderId = ref(null)
 
-  try {
-    const response = await axios.get('/api/orders', {
-      params: {
-        start_date: startDate.value || undefined,
-        end_date: endDate.value || undefined,
-        search: searchQuery.value || undefined,
-        per_page: pageSize.value,
-        page
-      }
-    })
-    orderData.value = response.data.data
-    pagination.value = { ...pagination.value, ...response.data.pagination }
-  } catch (error) {
-    console.error('Error fetching orders:', error)
-  } finally {
-    loading.value = false
-  }
+const openDialog = (id) => {
+    console.log('Order ID:', id)
+    selectedOrderId.value = id
+    dialogVisible.value = true
+}
+
+const getOrders = async (page = 1) => {
+    loading.value = true
+    currentPage.value = page
+    pagination.value.current_page = page
+
+    try {
+        const response = await axios.get('/api/orders', {
+            params: {
+                start_date: startDate.value || undefined,
+                end_date: endDate.value || undefined,
+                search: searchQuery.value || undefined,
+                per_page: pageSize.value,
+                page
+            }
+        })
+        orderData.value = response.data.data
+        pagination.value = { ...pagination.value, ...response.data.pagination }
+    } catch (error) {
+        console.error('Error fetching orders:', error)
+    } finally {
+        loading.value = false
+    }
 }
 
 const showModal = async (orderId) => {
-  try {
-    const [orderRes, productsRes] = await Promise.all([
-      axios.get(`/api/orders/${orderId}`),
-      axios.get(`/api/orders/${orderId}/products`)
-    ])
-    order.value = orderRes.data
-    orderProduct.value = productsRes.data
-    isModalVisible.value = true
-  } catch (error) {
-    console.error('Error fetching order details:', error)
-  }
-}
+    try {
+        console.log(`Fetching order details for ID: ${orderId}`)
+        loading.value = true
 
-const hideModal = () => {
-  isModalVisible.value = false
-}
+        const [orderRes, productsRes] = await Promise.all([
+            axios.get(`/api/order/${orderId}`),
+            axios.get(`/api/order/product/${orderId}`)
+        ])
 
+        order.value = orderRes.data
+        orderProduct.value = productsRes.data
+        console.log('Order:', order.value)
+        isModalVisible.value = true
+    } catch (error) {
+        console.error('Error fetching order details:', error)
+    } finally {
+        loading.value = false
+    }
+}
+const handleDialogClose = () => {
+    isModalVisible.value = false
+    order.value = {}
+    orderProduct.value = []
+}
 const handleSizeChange = (val) => {
-  pageSize.value = val
-  getOrders(1) // reset to page 1
+    pageSize.value = val
+    getOrders(1) // reset to page 1
 }
 
 const handleCurrentChange = (val) => {
-  getOrders(val)
+    getOrders(val)
 }
 
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(value || 0)
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(value || 0)
 }
 
 onMounted(() => getOrders())
