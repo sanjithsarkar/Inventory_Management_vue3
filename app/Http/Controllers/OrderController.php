@@ -15,44 +15,48 @@ class OrderController extends Controller
      * Display a listing of the resource.
      */
 
-     public function index(Request $request)  
-{
-    $currentPage = (int) $request->get('page', 1);  
-    $perPage = (int) $request->get('per_page', 10);  
+    public function index(Request $request)
+    {
+        $currentPage = (int) $request->get('page', 1);
+        $perPage = (int) $request->get('per_page', 10);
 
-    $searchQuery = $request->get('search');  
-    $startDate = $request->get('start_date');  
-    $endDate = $request->get('end_date');  
+        $searchQuery = $request->get('search');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
 
-    $ordersQuery = Order::query()
-        ->when(!empty($searchQuery), function ($query) use ($searchQuery) {
-            $query->where('order_number', 'like', '%' . $searchQuery . '%');
-        })
-        ->when(!empty($startDate), function ($query) use ($startDate, $endDate) {
-            $start = date('Y-m-d 00:00:00', strtotime($startDate));
-            if (!empty($endDate)) {
-                $end = date('Y-m-d 23:59:59', strtotime($endDate));
-                $query->whereBetween('created_at', [$start, $end]);
-            } else {
-                $query->whereBetween('created_at', [$start, Carbon::now()]);
-            }
-        })
-        
-        ->with('customer')
-        ->latest();
+        $ordersQuery = Order::query()
+            ->when(!empty($searchQuery), function ($query) use ($searchQuery) {
+                $query->where(function ($subQuery) use ($searchQuery) {
+                    $subQuery->where('order_number', 'like', '%' . $searchQuery . '%')
+                        ->orWhereHas('customer', function ($customerQuery) use ($searchQuery) {
+                            $customerQuery->where('name', 'like', '%' . $searchQuery . '%');
+                        });
+                });
+            })
+            ->when(!empty($startDate), function ($query) use ($startDate, $endDate) {
+                $start = date('Y-m-d 00:00:00', strtotime($startDate));
+                if (!empty($endDate)) {
+                    $end = date('Y-m-d 23:59:59', strtotime($endDate));
+                    $query->whereBetween('created_at', [$start, $end]);
+                } else {
+                    $query->whereBetween('created_at', [$start, Carbon::now()]);
+                }
+            })
+            ->with('customer')
+            ->latest();
 
-    $orders = $ordersQuery->paginate($perPage, ['*'], 'page', $currentPage);
+        $orders = $ordersQuery->paginate($perPage, ['*'], 'page', $currentPage);
 
-    return response()->json([
-        'data' => $orders->items(),
-        'pagination' => [
-            'current_page' => $orders->currentPage(),
-            'per_page' => $orders->perPage(),
-            'total' => $orders->total(),
-            'last_page' => $orders->lastPage()
-        ]
-    ]);
-}
+        return response()->json([
+            'data' => $orders->items(),
+            'pagination' => [
+                'current_page' => $orders->currentPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+                'last_page' => $orders->lastPage()
+            ]
+        ]);
+    }
 
 
     /**

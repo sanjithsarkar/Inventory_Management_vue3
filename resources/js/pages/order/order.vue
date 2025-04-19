@@ -7,7 +7,6 @@
                     value-format="YYYY-MM-DD" />
                 <el-date-picker v-model="endDate" type="date" placeholder="To date" format="YYYY-MM-DD"
                     value-format="YYYY-MM-DD" />
-                <el-button type="primary" @click="getOrders" icon="Search">Search</el-button>
             </el-space>
 
             <el-input v-model="searchQuery" placeholder="Search by Order ID" clearable style="width: 240px"
