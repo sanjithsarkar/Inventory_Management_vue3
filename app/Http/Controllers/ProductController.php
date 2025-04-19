@@ -44,7 +44,7 @@ class ProductController extends Controller
             $query->where('category_id', $searchCategory);
         })
         ->latest()
-        ->paginate(20);
+        ->paginate(10);
 
     foreach ($products as $product) {
         $product->image_url = url('storage/' . $product->image);
@@ -161,23 +161,26 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        $image = $product->image;
-        if ($image) {
-            unlink(storage_path('app/' . $image));
+        try {
+            // Delete associated image if exists
+            if ($product->image && Storage::exists($product->image)) {
+                Storage::delete($product->image);
+            }
+    
+            // Delete the product record
             $product->delete();
-
+    
             return response()->json([
                 'success' => true,
                 'message' => 'Product deleted successfully.',
             ]);
-        } else {
-
-            $product->delete();
-
+    
+        } catch (\Exception $e) {
             return response()->json([
-                'success' => true,
-                'message' => 'Product deleted successfully.',
-            ]);
+                'success' => false,
+                'message' => 'Failed to delete product.',
+                'error' => $e->getMessage() // Only include in development
+            ], 500);
         }
     }
 

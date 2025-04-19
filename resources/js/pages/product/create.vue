@@ -151,7 +151,7 @@ const onChange = (event) => {
                             <div class="form-group">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <input type="text" class="form-control m-2 py-2" id="exampleInputFirstName"
+                                        <input type="number" class="form-control m-2 py-2" id="exampleInputFirstName"
                                             placeholder="Enter Selling Price" v-model="form.selling_price">
                                         <small class="text-danger" v-if="errors.selling_price"> {{ errors.selling_price[0] }} </small>
                                     </div>
