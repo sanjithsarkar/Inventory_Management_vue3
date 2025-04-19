@@ -1,281 +1,284 @@
-<script setup>
-import { ref, onMounted, watch, computed } from 'vue';
-import { Bootstrap5Pagination } from 'laravel-vue-pagination';
-import { debounce } from 'lodash';
-import { useToastr } from '../../Helper/toaster';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
-
-const toastr = useToastr();
-
-const orderData = ref({ 'data': '' });
-
-const searchQuery = ref('');
-const startDate = ref(null);
-const endDate = ref(null);
-const router = useRouter();
-
-
-const orderProduct = ref(null);
-const order = ref(null);
-
-// -------------- Modal -----------------
-
-const isModalVisible = ref(false);
-const showModal = (id) => {
-    isModalVisible.value = true;
-
-
-    // ------------- get order product by order id ----------------
-
-    axios.get('/api/order/product/' + id)
-        .then(res => {
-            orderProduct.value = res.data;
-        })
-
-    // ------------------
-
-    axios.get('/api/order/' + id)
-        .then(res => {
-            order.value = res.data;
-        })
-};
-
-const hideModal = () => {
-    isModalVisible.value = false;
-};
-
-const getOrders = (page = 1) => {
-
-    axios.get('/api/orders?page=' + page, {
-        params: {
-            query: searchQuery.value.length == ''? '':searchQuery.value,
-            startDate: searchQuery.value.length == '' ? startDate.value : '',
-            endDate: searchQuery.value.length == '' ? endDate.value : ''
-        }
-    })
-        .then(response => {
-            orderData.value = response.data;
-            console.log('orderData = ', orderData.value);
-        })
-        .catch(res => {
-            console.log(res.data);
-        })
-}
-
-// const getOrders = (page = 1) => {
-//     axios.get('/api/orders?page=' + page, {
-//         params: {
-//             // query: searchQuery.value,
-//             date: dateSearch.value
-//         }
-//     })
-//         .then(response => {
-//             orderData.value = response.data;
-//             console.log('orderData = ', orderData.value);l
-//         })
-//         .catch(res => {
-//             console.log(res.data);
-//         })
-// }
-
-// ------------ Search By Date -----------
-
-const searchByDate = () => {
-    axios.get('/api/search/by/date', {
-        params: {
-            startDate: startDate.value || '',
-            endDate: endDate.value || ''
-        }
-    })
-        .then()
-        .catch()
-}
-
-
-watch([searchQuery, startDate, endDate], debounce(() => {
-    getOrders();
-}, 300));
-
-
-onMounted(() => {
-    getOrders();
-    searchByDate();
-
-})
-
-
-</script>
-
 <template>
-    <section id="employee-index" class="p-4">
-        <div class="add-link d-flex justify-content-between">
-            <div class="">
-                From:<input type="date" v-model="startDate" class="mx-2 p-1">
+    <el-card class="order-container">
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <el-space>
+                <el-date-picker v-model="startDate" type="date" placeholder="From date" format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD" />
+                <el-date-picker v-model="endDate" type="date" placeholder="To date" format="YYYY-MM-DD"
+                    value-format="YYYY-MM-DD" />
+                <el-button type="primary" @click="getOrders" icon="Search">Search</el-button>
+            </el-space>
 
-                To:<input type="date" v-model="endDate" class="mx-2 p-1">
-                <button @click.prevent="getOrders" class="btn btn-outline-success">Search</button>
-            </div>
-
-            <div>
-                <input type="text" v-model="searchQuery" class="px-3" placeholder="Search By Order Id....">
-            </div>
+            <el-input v-model="searchQuery" placeholder="Search by Order ID" clearable style="width: 240px"
+                @clear="getOrders">
+                <template #prefix>
+                    <el-icon>
+                        <Search />
+                    </el-icon>
+                </template>
+            </el-input>
         </div>
 
-        <div class="d-flex justify-content-center">
-            <h4 class="my-4">Order List</h4>
+        <!-- Order Table -->
+        <el-table :data="orderData" border stripe v-loading="loading" style="width: 100%"
+            @sort-change="handleSortChange">
+            <el-table-column type="index" width="60" label="No." />
+            <el-table-column prop="order_number" label="Order No" sortable />
+            <el-table-column label="Customer">
+                <template #default="{ row }">
+                    {{ row.customer?.name || 'N/A' }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="quantity" label="Qty" sortable />
+            <el-table-column prop="subTotal" label="Subtotal" sortable>
+                <template #default="{ row }">
+                    {{ formatCurrency(row.subTotal) }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="discount" label="Discount" sortable>
+                <template #default="{ row }">
+                    {{ row.discount < 1 ? '0%' : `${row.discount}%` }} </template>
+            </el-table-column>
+            <el-table-column prop="total" label="Total" sortable>
+                <template #default="{ row }">
+                    {{ formatCurrency(row.total) }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="paid" label="Paid" sortable>
+                <template #default="{ row }">
+                    {{ formatCurrency(row.paid) }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="due" label="Due" sortable>
+                <template #default="{ row }">
+                    {{ formatCurrency(row.due) }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="date" label="Date" sortable />
+            <el-table-column label="Actions" width="180">
+                <template #default="{ row }">
+                    <el-button size="small" @click="showModal(row.id)" type="primary" plain>
+                        <el-icon>
+                            <View />
+                        </el-icon> View
+                    </el-button>
+                    <el-button size="small" type="info" plain>
+                        <router-link :to="`/employee/edit/${row.id}`">
+                            <el-icon>
+                                <Edit />
+                            </el-icon> Edit
+                        </router-link>
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <!-- Pagination -->
+        <div class="pagination-wrapper">
+            <el-pagination  
+        v-model:current-page="currentPage"  
+        v-model:page-size="pageSize"  
+        :total="pagination.total"  
+        :page-sizes="pageSizes"  
+        layout="total, sizes, prev, pager, next, jumper"  
+        @size-change="handleSizeChange"  
+        @current-change="handleCurrentChange"  
+      />  
         </div>
 
-        <div>
-            <table id="table" class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th>Serial No</th>
-                        <th>OrderNumber</th>
-                        <th>Customer</th>
-                        <th>quantity</th>
-                        <th>subTotal</th>
-                        <th>discount</th>
-                        <th>Total</th>
-                        <th>Paid</th>
-                        <th>Due</th>
-                        <th>Date</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tablecontents">
-                    <tr v-for="(order, index) in orderData.data" :key="order.id">
-                        <td>{{ ++index }}</td>
-                        <td>{{ order.order_number }}</td>
-                        <td v-if="order.customer_id != null">{{ order.customer.name }}</td>
-                        <td v-else>Null</td>
-                        <td>{{ order.quantity }}</td>
-                        <td>{{ order.subTotal }}</td>
-                        <td v-if="order.discount < 1">0</td>
-                        <td v-else="">{{ order.discount }}%</td>
-                        <td>{{ order.total }}</td>
-                        <td>{{ order.paid }}</td>
-                        <td>{{ order.due }}</td>
-                        <td>{{ order.date }}</td>
+        <!-- Order Details Modal -->
+        <el-dialog v-model="isModalVisible" title="Order Details" width="80%" :close-on-click-modal="false">
+            <el-row :gutter="20">
+                <el-col :span="12">
+                    <el-card>
+                        <template #header>
+                            <h4>Customer Information</h4>
+                        </template>
+                        <el-descriptions v-if="order[0]?.customer" border column={1}>
+                            <el-descriptions-item label="Name">{{ order[0].customer.name }}</el-descriptions-item>
+                            <el-descriptions-item label="Email">{{ order[0].customer.email }}</el-descriptions-item>
+                            <el-descriptions-item label="Phone">{{ order[0].customer.phone }}</el-descriptions-item>
+                            <el-descriptions-item label="Address">{{ order[0].customer.address }}</el-descriptions-item>
+                        </el-descriptions>
+                        <el-empty v-else description="No customer data" />
+                    </el-card>
+                </el-col>
 
-                        <td><button @click="showModal(order.id)" class="badge badge-primary p-2 mx-2">Show</button>
+                <el-col :span="12">
+                    <el-card>
+                        <template #header>
+                            <h4>Order Summary</h4>
+                        </template>
+                        <el-descriptions border column={1}>
+                            <el-descriptions-item label="Order Number">{{ order[0]?.order_number
+                                }}</el-descriptions-item>
+                            <el-descriptions-item label="Quantity">{{ order[0]?.quantity }}</el-descriptions-item>
+                            <el-descriptions-item label="Subtotal">{{ formatCurrency(order[0]?.subTotal)
+                                }}</el-descriptions-item>
+                            <el-descriptions-item label="Discount">{{ order[0]?.discount }}%</el-descriptions-item>
+                            <el-descriptions-item label="Total">{{ formatCurrency(order[0]?.total)
+                                }}</el-descriptions-item>
+                            <el-descriptions-item label="Paid">{{ formatCurrency(order[0]?.paid)
+                                }}</el-descriptions-item>
+                            <el-descriptions-item label="Due">{{ formatCurrency(order[0]?.due) }}</el-descriptions-item>
+                            <el-descriptions-item label="Payment Method">{{ order[0]?.payby }}</el-descriptions-item>
+                            <el-descriptions-item label="Date">{{ order[0]?.date }}</el-descriptions-item>
+                        </el-descriptions>
+                    </el-card>
+                </el-col>
+            </el-row>
 
-                            <router-link :to="`/employee/edit/${order.id}`"
-                                class="badge badge-info p-2 mr-2">Edit</router-link>
-                        </td>
-                        <!-- <td><router-link :to="{ name: 'employee-edit', params: { id: emp.id } }">
-                                Edit
-                            </router-link></td> -->
-                    </tr>
-                </tbody>
-            </table>
-            <Bootstrap5Pagination :data="orderData" @pagination-change-page="getOrders" />
-        </div>
+            <el-card class="mt-4">
+                <template #header>
+                    <h4>Order Products</h4>
+                </template>
+                <el-table :data="orderProduct" border>
+                    <el-table-column type="index" width="60" />
+                    <el-table-column prop="pro_id" label="Product ID" />
+                    <el-table-column prop="name" label="Product Name" />
+                    <el-table-column prop="quantity" label="Quantity" />
+                    <el-table-column prop="price" label="Price">
+                        <template #default="{ row }">
+                            {{ formatCurrency(row.price) }}
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-card>
 
-        <div v-if="isModalVisible" class="modal">
-            <div class="modal-content">
-                <!-- Modal content goes here -->
-                <h4>Product Details</h4>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                            </div>
-
-                            <div class="card-body">
-                                <h5>Customer:</h5>
-                                <ul v-for="(order, index) in order" :key="order.id" class="list-group">
-                                    <ul v-if="order.customer_id != null">
-                                        <li class="list-group-item">Name: {{ order.customer.name }}</li>
-                                        <li class="list-group-item">Email: {{ order.customer.email }}</li>
-                                        <li class="list-group-item">Name: {{ order.customer.phone }}</li>
-                                        <li class="list-group-item">Email: {{ order.customer.address }}</li>
-                                    </ul>
-                                    <ul v-else="">
-                                        <span>No Available</span>
-                                    </ul>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                            </div>
-
-                            <div class="card-body">
-                                <h5>Order Details:</h5>
-                                <ul v-for="(order, index) in order" :key="order.id" class="list-group d-flex flex-wrap">
-                                    <!-- <li class="list-group-item">Name: {{ order.order_number }}</li> -->
-
-                                    <li>Order Number: {{ order.order_number }}</li>
-                                    <li>Quantity: {{ order.quantity }}</li>
-                                    <li>SubTotal: {{ order.subTotal }}</li>
-                                    <li>Discount: {{ order.discount }}</li>
-                                    <li>Discounted Payment: {{ order.discount_payment }}</li>
-                                    <li>Total: {{ order.total }}</li>
-                                    <li>Paid: {{ order.paid }}</li>
-                                    <li>Due: {{ order.due }}</li>
-                                    <li>PayBy: {{ order.payby }}</li>
-                                    <li>Date: {{ order.date }}</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <p class="d-flex justify-content-center">List of Order Product</p>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Serial</th>
-                            <th>Product id</th>
-                            <th>Name</th>
-                            <th>quantity</th>
-                            <th>Price</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(orderPro, index) in orderProduct" :key="orderPro.id">
-                            <td>{{ ++index }}</td>
-                            <td>{{ orderPro.pro_id }}</td>
-                            <td>{{ orderPro.name }}</td>
-                            <td>{{ orderPro.quantity }}</td>
-                            <td>{{ orderPro.price }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="d-flex justify-content-center mt-4">
-                    <button @click="hideModal" class="badge badge-danger p-2">Close Modal</button>
-                </div>
-            </div>
-        </div>
-    </section>
+            <template #footer>
+                <el-button @click="hideModal" type="danger">Close</el-button>
+            </template>
+        </el-dialog>
+    </el-card>
 </template>
 
-<style>
-.modal {
-    position: fixed;
-    top: 3%;
-    left: 25%;
-    width: 50%;
-    height: 95%;
-    background-color: rgba(0, 0, 0, 0.5);
+<script setup>
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
+import axios from 'axios'
+import { Search, View, Edit } from '@element-plus/icons-vue'
+
+const startDate = ref('')
+const endDate = ref('')
+const searchQuery = ref('')
+const orderData = ref([])
+const order = ref({})
+const orderProduct = ref([])
+const isModalVisible = ref(false)
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const timeout = ref(null)
+
+const pagination = ref({  
+  current_page: 1,  
+  per_page: 10,  
+  total: 0,  
+  last_page: 0,  
+})  
+const pageSizes = ref([10, 20, 50, 100])
+
+const debouncedGetOrders = () => {
+  loading.value = true
+  clearTimeout(timeout.value)
+  timeout.value = setTimeout(() => {
+    getOrders(currentPage.value)
+  }, 500)
+}
+
+watch([startDate, endDate, searchQuery], debouncedGetOrders, { immediate: true })
+
+onBeforeUnmount(() => clearTimeout(timeout.value))
+
+const getOrders = async (page = 1) => {
+  loading.value = true
+  currentPage.value = page
+  pagination.value.current_page = page
+
+  try {
+    const response = await axios.get('/api/orders', {
+      params: {
+        start_date: startDate.value || undefined,
+        end_date: endDate.value || undefined,
+        search: searchQuery.value || undefined,
+        per_page: pageSize.value,
+        page
+      }
+    })
+    orderData.value = response.data.data
+    pagination.value = { ...pagination.value, ...response.data.pagination }
+  } catch (error) {
+    console.error('Error fetching orders:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const showModal = async (orderId) => {
+  try {
+    const [orderRes, productsRes] = await Promise.all([
+      axios.get(`/api/orders/${orderId}`),
+      axios.get(`/api/orders/${orderId}/products`)
+    ])
+    order.value = orderRes.data
+    orderProduct.value = productsRes.data
+    isModalVisible.value = true
+  } catch (error) {
+    console.error('Error fetching order details:', error)
+  }
+}
+
+const hideModal = () => {
+  isModalVisible.value = false
+}
+
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  getOrders(1) // reset to page 1
+}
+
+const handleCurrentChange = (val) => {
+  getOrders(val)
+}
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD'
+  }).format(value || 0)
+}
+
+onMounted(() => getOrders())
+</script>
+
+
+<style scoped>
+.order-container {
+    margin: 20px;
+}
+
+.filter-section {
     display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
     align-items: center;
-    justify-content: center;
 }
 
-.modal-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 4px;
-    width: 100%;
-    height: 100%;
+.pagination-wrapper {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 
-ul li {
-    list-style: none;
+.el-table {
+    margin-top: 20px;
+}
+
+.el-descriptions {
+    margin-top: 20px;
+}
+
+.mt-4 {
+    margin-top: 1rem;
 }
 </style>

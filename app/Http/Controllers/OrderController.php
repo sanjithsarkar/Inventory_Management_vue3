@@ -14,36 +14,46 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {
-        $searchQuery = $request->input('query');
-        $startDate = $request->get('startDate');
-        $endDate = $request->get('endDate');
 
+     public function index(Request $request)  
+{
+    $currentPage = (int) $request->get('page', 1);  
+    $perPage = (int) $request->get('per_page', 10);  
 
-        $orders = Order::query()
-            ->when(request('query'), function ($query) use ($searchQuery) {
-                $query->where('order_number', 'like', '%' . $searchQuery . '%');
-            })
-            ->when(request('startDate'), function ($query) use ($startDate, $endDate) {
-                $firstdate = date_create($startDate);
-                $firstDate = date_format($firstdate, "d/m/Y");
+    $searchQuery = $request->get('search');  
+    $startDate = $request->get('start_date');  
+    $endDate = $request->get('end_date');  
 
-                if (request('endDate')) {
-                    $lastdate = date_create($endDate);
-                    $lastDate = date_format($lastdate, "d/m/Y");
+    $ordersQuery = Order::query()
+        ->when(!empty($searchQuery), function ($query) use ($searchQuery) {
+            $query->where('order_number', 'like', '%' . $searchQuery . '%');
+        })
+        ->when(!empty($startDate), function ($query) use ($startDate, $endDate) {
+            $start = date('Y-m-d 00:00:00', strtotime($startDate));
+            if (!empty($endDate)) {
+                $end = date('Y-m-d 23:59:59', strtotime($endDate));
+                $query->whereBetween('created_at', [$start, $end]);
+            } else {
+                $query->whereBetween('created_at', [$start, Carbon::now()]);
+            }
+        })
+        
+        ->with('customer')
+        ->latest();
 
-                    $query->whereBetween('date', [$firstDate, $lastDate]);
-                } else {
+    $orders = $ordersQuery->paginate($perPage, ['*'], 'page', $currentPage);
 
-                    $query->where('date', $firstDate);
-                }
-            })
-            ->with('customer')
-            ->latest()->paginate(5);
+    return response()->json([
+        'data' => $orders->items(),
+        'pagination' => [
+            'current_page' => $orders->currentPage(),
+            'per_page' => $orders->perPage(),
+            'total' => $orders->total(),
+            'last_page' => $orders->lastPage()
+        ]
+    ]);
+}
 
-        return response()->json($orders);
-    }
 
     /**
      * Show the form for creating a new resource.

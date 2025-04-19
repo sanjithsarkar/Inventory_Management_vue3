@@ -16,11 +16,15 @@ import { createApp } from 'vue';
 import router from './router.js';
 // import jQuery from 'jquery';
 // window.$ = window.jQuery = jQuery;
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
 
 
 // window.Reload = new Vue();
 
 const app = createApp({});
+
+app.use(ElementPlus)
 
 app.use(router).mount('#app');
 
