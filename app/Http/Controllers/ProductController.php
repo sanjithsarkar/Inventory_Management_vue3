@@ -47,11 +47,8 @@ class ProductController extends Controller
         ->paginate(20);
 
     foreach ($products as $product) {
-        // $product->image_url = url('storage/' . $product->image);
-        // #image url with storage url
-        $product->image_url = asset('storage/' . $product->image);
-        // dd($product->image_url);
-
+        $product->image_url = url('storage/' . $product->image);
+        // $product->image_url = asset('storage/' . $product->image);
     }
 
     return response()->json($products);
