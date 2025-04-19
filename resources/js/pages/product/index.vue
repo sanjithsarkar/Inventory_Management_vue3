@@ -190,8 +190,12 @@ onMounted(() => {
                         <td>{{ product.name }}</td>
                         <td>{{ product.category_id }}</td>
                         <td>{{ product.quantity }}</td>
-                        <td> <img :src="product.image_url" alt="" :height="50"></td>
-                        <td><router-link :to="`/product/edit/${product.id}`" class="btn btn-success mr-2">Edit</router-link>
+                        <td> <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
+                                class="img-thumbnail" style="height: 50px; width: auto;">
+                            <span v-else>No image</span>
+                        </td>
+                        <td><router-link :to="`/product/edit/${product.id}`"
+                                class="btn btn-success mr-2">Edit</router-link>
 
                             <a @click="deleteProduct(product.id)" class="btn btn-danger">Delete</a>
                         </td>

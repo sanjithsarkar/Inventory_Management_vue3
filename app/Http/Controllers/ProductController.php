@@ -47,7 +47,11 @@ class ProductController extends Controller
         ->paginate(20);
 
     foreach ($products as $product) {
-        $product->image_url = Storage::url($product->image);
+        // $product->image_url = url('storage/' . $product->image);
+        // #image url with storage url
+        $product->image_url = asset('storage/' . $product->image);
+        // dd($product->image_url);
+
     }
 
     return response()->json($products);
@@ -70,18 +74,24 @@ class ProductController extends Controller
         //  dd($request->all());
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:3',
-            'category_id' => 'required'
+            'category_id' => 'required',
+            'quantity' => 'required|integer',
+            'selling_price' => 'required|numeric',
+            'code' => 'required|string|max:255',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:88048',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()]);
         }
 
-        $imgPath = '';
+        $imagePath = null;
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . $image->getClientOriginalName();
-            $imgPath = $image->storeAs('public/products', $imageName);
+            // Store the image in storage/app/public/products
+            $imagePath = $request->file('image')->store('products', 'public');
+            // dd($imagePath);
+            // If you need the full URL for frontend access:
+            // $imageUrl = asset('storage/'.$imagePath);
         }
 
         $product = Product::create([
@@ -90,7 +100,7 @@ class ProductController extends Controller
             'quantity' => $request->quantity,
             'selling_price' => $request->selling_price,
             'code' => $request->code,
-            'image' => $imgPath,
+            'image' => $imagePath,
         ]);
 
         return response()->json($product);
