@@ -27,9 +27,55 @@ onMounted(() => {
 
 const imageUrl = ref(null);
 
+// const onFileSelected = (event) => {
+//   form.value.image = event.target.files[0];
+//   imageUrl.value = URL.createObjectURL(form.value.image);
+//   if (form.value.image) {
+//     // Validate file size and type client-side
+//     if (form.value.image.size > 2048 * 1024) {
+//       errors.value.image = ['Image must be less than 2MB'];
+//       return;
+//     }
+    
+//     if (!['image/jpeg', 'image/png', 'image/jpg', 'image/gif'].includes(file.type)) {
+//       errors.value.image = ['Invalid image format'];
+//       return;
+//     }
+    
+//     formData.value.image = file;
+//     imagePreview.value = URL.createObjectURL(file);
+//     errors.value.image = null;
+//   }
+// };
+
+const validateImageFile = (file) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+  const maxSize = 2 * 1024 * 1024;
+
+  if (!allowedTypes.includes(file.type)) {
+    return 'Invalid image format. Please upload JPEG, PNG, or GIF';
+  }
+  if (file.size > maxSize) {
+    return 'Image size must be less than 2MB';
+  }
+  return null;
+};
+
 const onFileSelected = (event) => {
-  form.value.image = event.target.files[0];
-  imageUrl.value = URL.createObjectURL(form.value.image);
+  errors.value.image = null;
+  if (imageUrl.value) URL.revokeObjectURL(imageUrl.value);
+
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const validationError = validateImageFile(file);
+  if (validationError) {
+    errors.value.image = [validationError];
+    return;
+  }
+
+  form.value.image = file;
+  imageUrl.value = URL.createObjectURL(file);
 };
 
 const productInsert = () => {
@@ -135,7 +181,7 @@ const onChange = (event) => {
                                     <div class="col-md-6">
                                         <div class="row">
                                             <div class="col-md-7">
-                                                <input type="file" class="m-2 py-2" id="customFile"
+                                                <input type="file" class="m-2 py-2" style="display: block;" id="customFile"
                                                     @change="onFileSelected">
 
                                                 <small class="text-danger" v-if="errors.image"> {{ errors.image[0] }}

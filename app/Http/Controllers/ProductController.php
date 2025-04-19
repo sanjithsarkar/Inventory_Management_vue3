@@ -75,7 +75,6 @@ class ProductController extends Controller
             'quantity' => 'required|integer',
             'selling_price' => 'required|numeric',
             'code' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:88048',
         ]);
 
         if ($validator->fails()) {
