@@ -31,28 +31,62 @@ class ProductController extends Controller
     //     return response()->json($products);
     // }
 
-    public function index(Request $request)
-{
-    $searchQuery = $request->get('query');
-    $searchCategory = $request->get('category');
+//     public function index(Request $request)
+// {
+//     $searchQuery = $request->get('query');
+//     $searchCategory = $request->get('category');
 
-    $products = Product::query()
-        ->when($searchQuery, function ($query) use ($searchQuery) {
-            $query->where('name', 'like', '%' . $searchQuery . '%');
-        })
-        ->when($searchCategory, function ($query) use ($searchCategory) {
-            $query->where('category_id', $searchCategory);
-        })
-        ->latest()
-        ->paginate(10);
+//     $products = Product::query()
+//         ->when($searchQuery, function ($query) use ($searchQuery) {
+//             $query->where('name', 'like', '%' . $searchQuery . '%');
+//         })
+//         ->when($searchCategory, function ($query) use ($searchCategory) {
+//             $query->where('category_id', $searchCategory);
+//         })
+//         ->latest()
+//         ->paginate(10);
 
-    foreach ($products as $product) {
-        $product->image_url = url('storage/' . $product->image);
-        // $product->image_url = asset('storage/' . $product->image);
-    }
+//     foreach ($products as $product) {
+//         $product->image_url = url('storage/' . $product->image);
+//         // $product->image_url = asset('storage/' . $product->image);
+//     }
 
-    return response()->json($products);
-}
+//     return response()->json($products);
+// }
+
+public function index(Request $request)  
+{  
+    $searchQuery = $request->get('query');  
+    $searchCategory = $request->get('category');  
+    $perPage = (int) $request->get('per_page', 10); // Set a default value for items per page  
+
+    // Build the products query  
+    $productsQuery = Product::query()  
+        ->when($searchQuery, function ($query) use ($searchQuery) {  
+            $query->where('name', 'like', '%' . $searchQuery . '%');  
+        })  
+        ->when($searchCategory, function ($query) use ($searchCategory) {  
+            $query->where('category_id', $searchCategory);  
+        })  
+        ->latest();  
+
+    // Paginate the results  
+    $products = $productsQuery->paginate($perPage);  
+
+    // Map and modify products to include the image URLs  
+    $products->getCollection()->transform(function ($product) {  
+        $product->image_url = $product->image ? url('storage/' . $product->image) : null; // Handle null values for the image  
+        return $product;  
+    });  
+
+    return response()->json([  
+        'code' => 200, // Optional: add a status code for better response handling  
+        'data' => $products->items(),  
+        'total' => $products->total(),  
+        'current_page' => $products->currentPage(),  
+        'last_page' => $products->lastPage(),  
+    ]);  
+}  
 
 
     /**
