@@ -21,13 +21,13 @@
                     <el-table-column label="Qty" width="150">
                         <template #default="{ row }">
                             <div class="quantity-controls">
-                                <el-button size="small" :icon="Minus" circle @click="decreaseQuantity(row.id, row.quantity)"
-                                    :disabled="row.quantity <= 1" />
+                                <el-button size="small" :icon="Minus" circle
+                                    @click="decreaseQuantity(row.id, row.quantity)" :disabled="row.quantity <= 1" />
                                 <el-input v-model="row.quantity" :min="1" :max="500" size="small"
-                                    @keyup="() => increaseQuantity(row.id, 'dynamic', row.quantity)" controls-position="right"
-                                    class="quantity-input" />
-                                <el-button size="small" :disabled="Number(row.quantity) >= Number(row.product.quantity)" :icon="Plus" circle
-                                    @click="increaseQuantity(row.id)" />
+                                    @keyup="() => increaseQuantity(row.id, 'dynamic', row.quantity)"
+                                    controls-position="right" class="quantity-input" />
+                                <el-button size="small" :disabled="Number(row.quantity) >= Number(row.product.quantity)"
+                                    :icon="Plus" circle @click="increaseQuantity(row.id)" />
                             </div>
                         </template>
                     </el-table-column>
@@ -52,61 +52,59 @@
                 <!-- Order Summary -->
                 <el-descriptions :column="1" border class="summary-section">
                     <el-descriptions-item label="Total Quantity">
-                        <strong>{{ totalQuantity }}</strong>
+                        {{ totalQuantity }}
                     </el-descriptions-item>
                     <el-descriptions-item label="Sub Total">
-                        <strong>{{ formatCurrency(totalSubTotal) }}</strong>
+                        {{ formatCurrency(totalSubTotal) }}
                     </el-descriptions-item>
                     <el-descriptions-item label="Discount (%)">
-                        <el-input-number v-model="discount" :min="0" :max="100" size="small" />
+                        <el-input-number v-model="discount" :min="0" :max="100" size="default" />
                         <span class="discount-amount">({{ formatCurrency(discountPayment) }})</span>
                     </el-descriptions-item>
                     <el-descriptions-item label="Total Amount">
-                        <strong>{{ formatCurrency(totalAmount) }}</strong>
+                        {{ formatCurrency(totalAmount) }}
                     </el-descriptions-item>
                 </el-descriptions>
 
                 <!-- Payment Form -->
                 <el-form @submit.prevent="orderDone" class="payment-form">
-                    <el-form-item label="Customer">
-                        <el-select v-model="data.customer_id" placeholder="Select Customer" clearable>
-                            <el-option v-for="customer in customerData.data" :key="customer.id" :label="customer.name"
-                                :value="customer.id" />
-                        </el-select>
-                    </el-form-item>
-
-                    <el-form-item label="Payment Amount">
-                        <el-input-number v-model="paymentReceive" :min="0" :max="totalAmount" :precision="2" />
-                    </el-form-item>
-
-                    <el-form-item label="Due Amount">
-                        <el-tag :type="remainingPayment > 0 ? 'danger' : 'success'">
-                            {{ formatCurrency(remainingPayment) }}
-                        </el-tag>
-                    </el-form-item>
-
-                    <el-form-item label="Payment Method">
-                        <el-select v-model="data.payby" placeholder="Select Payment Method">
-                            <el-option label="Hand Cash" value="HandCash" />
-                            <el-option label="Bkash" value="Bkash" />
-                            <el-option label="Cheque" value="Cheaque" />
-                            <el-option label="Gift Card" value="GiftCard" />
-                            <el-option label="Stripe" value="stripe" />
-                            <el-option label="PayPal" value="paypal" />
-                        </el-select>
-                    </el-form-item>
-
-                    <el-form-item>
-                        <el-button v-if="data.payby === 'stripe'" type="primary" @click="payByStripe">
-                            Pay with Stripe
-                        </el-button>
-                        <el-button v-else-if="data.payby === 'paypal'" type="primary" @click="payByPaypal">
-                            Pay with PayPal
-                        </el-button>
-                        <el-button v-else type="success" native-type="submit">
-                            Complete Order
-                        </el-button>
-                    </el-form-item>
+                    <el-descriptions border :column="1">
+                        <el-descriptions-item label="Select Customer">
+                            <el-select v-model="data.customer_id" placeholder="Select Customer" clearable>
+                                <el-option v-for="customer in customerData.data" :key="customer.id"
+                                    :label="customer.name" :value="customer.id" />
+                            </el-select>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="Payment Amount">
+                            <el-input v-model="paymentReceive" :min="0" :max="totalAmount" :precision="2" />
+                        </el-descriptions-item>
+                        <el-descriptions-item label="Due Amount">
+                            <el-tag :type="remainingPayment > 0 ? 'danger' : 'success'">
+                                {{ formatCurrency(remainingPayment) }}
+                            </el-tag>
+                        </el-descriptions-item>
+                        <el-descriptions-item label="Payment Method">
+                            <el-select v-model="data.payby" placeholder="Select Payment Method">
+                                <el-option label="Hand Cash" value="HandCash" />
+                                <el-option label="Bkash" value="Bkash" />
+                                <el-option label="Cheque" value="Cheaque" />
+                                <el-option label="Gift Card" value="GiftCard" />
+                                <el-option label="Stripe" value="stripe" />
+                                <el-option label="PayPal" value="paypal" />
+                            </el-select>
+                        </el-descriptions-item>
+                        <el-descriptions-item>
+                            <el-button v-if="data.payby === 'stripe'" type="primary" @click="payByStripe">
+                                Pay with Stripe
+                            </el-button>
+                            <el-button v-else-if="data.payby === 'paypal'" type="primary" @click="payByPaypal">
+                                Pay with PayPal
+                            </el-button>
+                            <el-button v-else type="success" native-type="submit">
+                                Complete Order
+                            </el-button>
+                        </el-descriptions-item>
+                    </el-descriptions>
                 </el-form>
             </el-card>
         </el-col>
@@ -325,7 +323,7 @@ const increaseQuantity = (id, dynamicTest, quantity) => {
 const decreaseQuantity = (id, quantity) => {
     axios.get('/api/decrease/cart/' + id)
         .then(() => {
-            if(quantity <= 1) {
+            if (quantity <= 1) {
                 return toastr.error('Quantity cannot be less than 1');
             } else {
                 methodRefreshByDebounce();
@@ -389,8 +387,8 @@ const orderDone = async () => {
         paymentReceive.value = 0;
         data.value.customer_id = null;
         data.value.payby = 'HandCash';
-       methodRefreshByDebounce();
-       productsRefreshByDebounce();
+        methodRefreshByDebounce();
+        productsRefreshByDebounce();
     } catch (error) {
         console.error('Error completing order:', error);
         toastr.error('Failed to complete order');
