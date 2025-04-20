@@ -50,6 +50,7 @@
                 </el-table>
 
                 <!-- Order Summary -->
+                 
                 <el-descriptions :column="1" border class="summary-section">
                     <el-descriptions-item label="Total Quantity">
                         {{ totalQuantity }}
@@ -116,12 +117,12 @@
                     <div class="card-header">
                         <span>Products</span>
                         <div class="product-filters">
-                            <el-select v-model="selectedCategory" placeholder="Select Category" clearable>
+                            <el-select v-model="selectedCategory" placeholder="Select Category" clearable style="width: 160px;">
                                 <el-option v-for="category in categoryData" :key="category.id" :label="category.name"
                                     :value="category.id" />
                             </el-select>
                             <el-input v-model="searchQuery" placeholder="Search Products" clearable
-                                style="width: 200px">
+                                style="width: 180px">
                                 <template #prefix>
                                     <el-icon>
                                         <Search />
