@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use DB;
 use Illuminate\Support\Facades\DB as FacadesDB;
+use function PHPUnit\Framework\isEmpty;
 
 class CartController extends Controller
 {
@@ -33,7 +34,7 @@ class CartController extends Controller
                 return response()->json("This product is stock out!");
             }
         } else {
-            $increment =  Pos::where('pro_id', $id)->increment('quantity');
+            $increment = Pos::where('pro_id', $id)->increment('quantity');
 
             $posProduct = Pos::where('pro_id', $id)->first();
             $sub_total = $posProduct->quantity * $posProduct->price;
@@ -45,22 +46,48 @@ class CartController extends Controller
 
     public function getAllCart()
     {
-        $carts = Pos::all();
+        #get all cart data with product
+        $carts = Pos::with('product')->get();
         return response()->json($carts);
     }
 
-    public function increaseCart($id)
+    public function increaseCart($id, Request $request)
     {
-        $product_increment = Pos::where('id', $id)->increment('quantity');
+        $dynamicParam = $request->input('dynamic');
+        $quantity = $request->input('quantity');
+        $posQuantity = Pos::where('id', $id)->select('quantity')->first();
+        $productQuantity = Pos::where('id', $id)
+            ->with(['product:id,quantity'])
+            ->first();
+        // dd($posQuantity);
+        // dd($productQuantity->product->quantity);
+        if($quantity >= $productQuantity->product->quantity || $posQuantity->quantity >= $productQuantity->product->quantity) {
+            return response()->json("You can't add more than available quantity!");
+        }
 
-        $posData = Pos::where('id', $id)->first();
-        $sub_total = $posData->quantity * $posData->price;
-        Pos::where('id', $id)->update(['sub_total' => $sub_total]);
+        if ($dynamicParam === 'dynamic') {
+            // dd($quantity, 'quantity');
+            $posQtyUpdate = Pos::where('id', $id)->update(['quantity' => $quantity]);
+            $posData = Pos::where('id', $id)->first();
+            $sub_total = $posData->quantity * $posData->price;
+            Pos::where('id', $id)->update(['sub_total' => $sub_total]);
+            // return response()->json($posData);
+        } else {
+            // dd($quantity);
+            $product_increment = Pos::where('id', $id)->increment('quantity');
+            $posData = Pos::where('id', $id)->first();
+            $sub_total = $posData->quantity * $posData->price;
+            Pos::where('id', $id)->update(['sub_total' => $sub_total]);
+        }
     }
 
 
     public function decreaseCart($id)
     {
+        $posQty = Pos::where('id', $id)->first();
+        if ($posQty->quantity <= 1) {
+            return response()->json('Quantity must be greater than 0');
+        }
         $product_decrement = Pos::where('id', $id)->decrement('quantity');
 
         $posData = Pos::where('id', $id)->first();

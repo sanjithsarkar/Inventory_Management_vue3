@@ -1,7 +1,7 @@
 <template>
     <el-row :gutter="20" class="pos-container">
         <!-- Left Column - Cart -->
-        <el-col :span="10">
+        <el-col :span="12">
             <el-card class="cart-card">
                 <template #header>
                     <div class="card-header">
@@ -18,10 +18,17 @@
                 <el-table :data="posData" border style="width: 100%">
                     <el-table-column type="index" width="50" label="#" />
                     <el-table-column prop="name" label="Name" />
-                    <el-table-column label="Qty" width="120">
+                    <el-table-column label="Qty" width="150">
                         <template #default="{ row }">
-                            <el-input-number v-model="row.quantity" :min="1" size="small"
-                                @change="updateQuantity(row)" />
+                            <div class="quantity-controls">
+                                <el-button size="small" :icon="Minus" circle @click="decreaseQuantity(row.id, row.quantity)"
+                                    :disabled="row.quantity <= 1" />
+                                <el-input v-model="row.quantity" :min="1" :max="500" size="small"
+                                    @keyup="() => increaseQuantity(row.id, 'dynamic', row.quantity)" controls-position="right"
+                                    class="quantity-input" />
+                                <el-button size="small" :disabled="Number(row.quantity) >= Number(row.product.quantity)" :icon="Plus" circle
+                                    @click="increaseQuantity(row.id)" />
+                            </div>
                         </template>
                     </el-table-column>
                     <el-table-column prop="price" label="Price" width="100">
@@ -34,9 +41,10 @@
                             <el-tag type="success">{{ formatCurrency(row.sub_total) }}</el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="Action" width="100">
+                    <el-table-column label="Action" width="70">
                         <template #default="{ row }">
-                            <el-button type="danger" size="small" icon="Delete" circle @click="deleteItem(row.id)" />
+                            <el-button type="danger" size="small" :icon="CloseBold" circle
+                                @click="deleteItem(row.id)" />
                         </template>
                     </el-table-column>
                 </el-table>
@@ -104,15 +112,15 @@
         </el-col>
 
         <!-- Right Column - Products -->
-        <el-col :span="14">
+        <el-col :span="12">
             <el-card class="products-card">
                 <template #header>
                     <div class="card-header">
                         <span>Products</span>
                         <div class="product-filters">
                             <el-select v-model="selectedCategory" placeholder="Select Category" clearable>
-                                <el-option v-for="category in categoryData" :key="category.id"
-                                    :label="category.name" :value="category.id" />
+                                <el-option v-for="category in categoryData" :key="category.id" :label="category.name"
+                                    :value="category.id" />
                             </el-select>
                             <el-input v-model="searchQuery" placeholder="Search Products" clearable
                                 style="width: 200px">
@@ -163,7 +171,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { User, Delete, Search, Picture } from '@element-plus/icons-vue';
+import { User, Delete, Search, Picture, CloseBold, Minus, Plus } from '@element-plus/icons-vue';
 import { debounce } from 'lodash';
 import { useToastr } from '../../Helper/toaster';
 import axios from 'axios';
@@ -238,7 +246,7 @@ const getProducts = async () => {
             }
         })
         productData.value = response.data.data // Assuming paginated result
-        console.log(response.data)
+        console.log('products', response.data)
         totalProducts.value = response.data.total // Backend should send this
     } catch (error) {
         console.error('Error fetching products:', error)
@@ -273,6 +281,14 @@ const getPOSData = async () => {
     }
 };
 
+const methodRefreshByDebounce = debounce(() => {
+    getPOSData();
+}, 300);
+
+const productsRefreshByDebounce = debounce(() => {
+    getProducts();
+}, 300);
+
 const addToCart = async (id) => {
     try {
         const response = await axios.get(`/api/add/cart/${id}`);
@@ -287,15 +303,47 @@ const addToCart = async (id) => {
     }
 };
 
-const updateQuantity = async (item) => {
-    try {
-        await axios.get(`/api/increase/cart/${item.id}`);
-        getPOSData();
-        toastr.success('Quantity updated successfully!');
-    } catch (error) {
-        console.error('Error updating quantity:', error);
-    }
-};
+const increaseQuantity = (id, dynamicTest, quantity) => {
+    console.log('test', dynamicTest);
+    axios.get('/api/increase/cart/' + id, {
+        params: {
+            dynamic: dynamicTest,
+            quantity: quantity || 1
+        }
+    })
+        .then(() => {
+            methodRefreshByDebounce();
+            toastr.success('Item Inserted Successfully!!');
+        })
+        .catch()
+}
+
+
+
+//----------- Decrease Item --------------
+
+const decreaseQuantity = (id, quantity) => {
+    axios.get('/api/decrease/cart/' + id)
+        .then(() => {
+            if(quantity <= 1) {
+                return toastr.error('Quantity cannot be less than 1');
+            } else {
+                methodRefreshByDebounce();
+                toastr.success('Item Decreased Successfully!!');
+            }
+        })
+        .catch()
+}
+
+// const updateQuantity = async (item) => {
+//     try {
+//         await axios.get(`/api/increase/cart/${item.id}`);
+//         getPOSData();
+//         toastr.success('Quantity updated successfully!');
+//     } catch (error) {
+//         console.error('Error updating quantity:', error);
+//     }
+// };
 
 const deleteItem = async (id) => {
     try {
@@ -341,7 +389,8 @@ const orderDone = async () => {
         paymentReceive.value = 0;
         data.value.customer_id = null;
         data.value.payby = 'HandCash';
-        getPOSData();
+       methodRefreshByDebounce();
+       productsRefreshByDebounce();
     } catch (error) {
         console.error('Error completing order:', error);
         toastr.error('Failed to complete order');
@@ -368,32 +417,37 @@ onMounted(() => {
     height: calc(100vh - 20px);
 }
 
-.card-header {  
-  display: flex;  
-  justify-content: space-between;  
-  align-items: center;  
-  padding-bottom: 12px;  
-  border-bottom: 1px solid #ebeef5;  
-}  
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ebeef5;
+}
 
-.header-title {  
-  font-weight: 600;  
-  font-size: 1.25rem;  
-  color: #303133;  
-}  
+.header-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    color: #303133;
+}
 
-.product-filters {  
-  display: flex;  
-  gap: 12px;  
-}  
+.product-filters {
+    display: flex;
+    gap: 12px;
+}
 
-.filter-select {  
-  min-width: 180px;  
-}  
+.filter-select {
+    min-width: 180px;
+}
 
-.search-input {  
-  width: 220px;  
-} 
+.search-input {
+    width: 220px;
+}
+
+.el-input.el-input--small.quantity-input {
+    width: 70px !important;
+    padding: 0 3px;
+}
 
 .cart-card,
 .products-card {
@@ -451,16 +505,16 @@ onMounted(() => {
 }
 
 .product-info {
-	padding-top: 10px;
-	display: flex;
-	flex-direction: column;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
 }
 
 .price-stock {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
 }
 
 .image-error {

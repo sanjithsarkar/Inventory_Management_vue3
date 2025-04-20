@@ -87,8 +87,6 @@ class PosController extends Controller
         //    $pos->quantity = $product->quantity;
         //    $pos->save();
 
-        dd($pos);
-
         return response()->json($pos);
     }
 
