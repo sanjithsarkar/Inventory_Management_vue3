@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->string('sku');
             $table->string('category_id');
             $table->string('name');
             $table->string('code')->nullable();
@@ -23,6 +24,7 @@ return new class extends Migration
             $table->string('buying_date')->nullable();
             $table->string('image')->nullable();
             $table->string('quantity')->nullable();
+            $table->string('description')->nullable();
             $table->timestamps();
         });
     }

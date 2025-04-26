@@ -44,10 +44,10 @@
                         </router-link>
                     </template>
                 </el-table-column>
-
+                <el-table-column prop="sku" label="SKU" width="135" sortable />
                 <el-table-column prop="category_id" label="Category" width="130" sortable />
 
-                <el-table-column prop="quantity" label="Quantity" width="120" sortable>
+                <el-table-column prop="quantity" label="Quantity" width="110" sortable>
                     <template #default="{ row }">
                         <el-tag :type="row.quantity > 0 ? 'success' : 'danger'">
                             {{ row.quantity }}
@@ -55,12 +55,11 @@
                     </template>
                 </el-table-column>
 
-                <el-table-column prop="selling_price" label="Selling Price" width="130" sortable />
-                <el-table-column prop="supplier_id" label="Supplier" width="110" sortable />
+                <el-table-column prop="selling_price" label="Sale Price" width="120" sortable />
                 <el-table-column prop="buying_date" label="Buying Date" width="125" sortable />
                 
 
-                <el-table-column label="Image" width="105">
+                <el-table-column label="Image" width="100">
                     <template #default="{ row }">
                         <el-image v-if="row.image_url" :src="row.image_url" :alt="row.name" fit="cover"
                             style="width: 50px; height: 50px" :preview-src-list="[row.image_url]" hide-on-click-modal>
@@ -158,7 +157,7 @@
 
         <template #footer>
             <div class="flex justify-between">
-                <el-button @click="detailsVisible = false">Close</el-button>
+                <el-button @click="detailsVisible = false" style="margin-bottom: 10px;">Close</el-button>
                 <div>
                     <el-button type="primary" @click="goToEditProduct(selectedProduct)">Edit</el-button>
                     <el-popconfirm title="Are you sure you want to delete this product?"

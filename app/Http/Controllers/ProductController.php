@@ -7,6 +7,8 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ProductController extends Controller
 {
@@ -124,13 +126,25 @@ class ProductController extends Controller
             // $imageUrl = asset('storage/'.$imagePath);
         }
 
+        // Generate Advanced SKU
+        $categoryPrefix = 'CAT' . $request->category_id;
+        $nameSlug = strtoupper(Str::slug(Str::limit($request->name, 10, ''), ''));
+        $datePart = Carbon::now()->format('Ymd');
+        $randomSuffix = strtoupper(Str::random(4));
+        $sku = "{$datePart}-{$randomSuffix}";
         $product = Product::create([
+            'sku' => $sku,
             'name' => $request->name,
             'category_id' => $request->category_id,
             'quantity' => $request->quantity,
             'selling_price' => $request->selling_price,
             'code' => $request->code,
             'image' => $imagePath,
+            'description' => $request->description,
+            'root' => $request->root,
+            'buying_price' => $request->buying_price,
+            'supplier_id' => $request->supplier_id,
+            'buying_date' => $request->buying_date,
         ]);
 
         return response()->json($product);
