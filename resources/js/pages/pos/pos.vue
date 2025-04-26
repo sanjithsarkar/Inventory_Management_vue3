@@ -84,6 +84,14 @@
                                 {{ formatCurrency(remainingPayment) }}
                             </el-tag>
                         </el-descriptions-item>
+                        <input type="hidden" v-model="data.duePayment" />
+                        <input type="hidden" v-model="data.quantity" />
+                        <input type="hidden" v-model="data.subTotal" />
+                        <input type="hidden" v-model="data.discount" />
+                        <input type="hidden" v-model="data.discountPayment" />
+                        <input type="hidden" v-model="data.totalAmount" />
+                        <input type="hidden" v-model="data.paymentReceive" />
+                        <input type="hidden" v-model="data.duePayment" />
                         <el-descriptions-item label="Payment Method">
                             <el-select v-model="data.payby" placeholder="Select Payment Method">
                                 <el-option label="Hand Cash" value="HandCash" />
@@ -169,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, watchEffect } from 'vue';
 import { User, Delete, Search, Picture, CloseBold, Minus, Plus } from '@element-plus/icons-vue';
 import { debounce } from 'lodash';
 import { useToastr } from '../../Helper/toaster';
@@ -188,6 +196,13 @@ const searchQuery = ref('');
 const discount = ref(0);
 const paymentReceive = ref(0);
 const data = ref({
+    quantity: 0,
+    subTotal: 0,
+    discount: 0,
+    discountPayment: 0,
+    totalAmount: 0,
+    paymentReceive: 0,
+    duePayment: 0,
     customer_id: null,
     payby: 'HandCash'
 });
@@ -378,6 +393,17 @@ const payByPaypal = async () => {
         toastr.error('Failed to process PayPal payment');
     }
 };
+
+watchEffect(() => {
+    data.value.quantity = totalQuantity.value;
+    data.value.subTotal = totalSubTotal.value;
+    data.value.discount = discount.value;
+    data.value.discountPayment = discountPayment.value;
+    data.value.totalAmount = totalAmount.value;
+    data.value.paymentReceive = paymentReceive.value;
+    data.value.duePayment = formatCurrency(remainingPayment.value);
+});
+
 
 const orderDone = async () => {
     try {
