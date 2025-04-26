@@ -48,7 +48,7 @@ Route::post('/order/done', 'App\Http\controllers\CartController@orderDone');
 Route::get('/search/by/date', 'App\Http\controllers\OrderController@searchByDate');
 Route::get('/order/product/{id}', 'App\Http\controllers\OrderController@getOrderProduct');
 Route::get('/order/{id}', 'App\Http\controllers\OrderController@getOrder');
-Route::get('/today/sell', 'App\Http\controllers\OrderController@todaySell');
+Route::get('/today/sell', 'App\Http\controllers\OrderController@todaySale');
 Route::get('/today/income', 'App\Http\controllers\OrderController@todayIncome');
 Route::get('/today/due', 'App\Http\controllers\OrderController@todayDue');
 Route::get('/today/expense', 'App\Http\controllers\ExpenseController@todayExpense');
@@ -61,3 +61,8 @@ Route::post('/paypal/payment', 'App\Http\controllers\PayPalController@payment')-
 Route::get('/paypal/cancel', 'App\Http\controllers\PayPalController@cancel')->name('paypal.cancel');
 Route::get('/payment/success', 'App\Http\controllers\PayPalController@success')->name('paypal.success');
 Route::post('/paypal/webhook', [PayPalController::class, 'handleWebhook'])->name('paypal.webhook');
+Route::get('/yesterday/sales', 'App\Http\controllers\OrderController@yesterdaySales');
+Route::get('/yesterday/income', 'App\Http\controllers\OrderController@yesterdayIncome');
+Route::get('/yesterday/due', 'App\Http\controllers\OrderController@yesterdayDue');
+Route::get('/yesterday/expense', 'App\Http\controllers\ExpenseController@yesterdayExpense');
+

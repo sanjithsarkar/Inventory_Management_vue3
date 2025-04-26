@@ -140,26 +140,35 @@ const todayDue = ref(null);
 const todayExpense = ref(null);
 
 // Yesterday's static data (could be fetched similarly)
-const yesterdaySale = ref(11850.00);
-const yesterdayIncome = ref(8950.00);
-const yesterdayDue = ref(2935.75);
-const yesterdayExpense = ref(2980.25);
+const yesterdaySale = ref(0);
+const yesterdayIncome = ref(0);
+const yesterdayDue = ref(0);
+const yesterdayExpense = ref(0);
 
 // Defensive computed to prevent NaN or errors
-const saleChange = computed(() => {
-  if (todaySale.value == null) return 0;
-  return (((todaySale.value - yesterdaySale.value) / yesterdaySale.value) * 100).toFixed(1);
-});
+const saleChange = computed(() => {  
+  if (todaySale.value === 0 && yesterdaySale.value === 0) return 0;  
+
+  if (yesterdaySale.value === 0 && todaySale.value > 0) return 100;  
+  
+  return (((todaySale.value - yesterdaySale.value) / yesterdaySale.value) * 100).toFixed(1);  
+});  
+
 const incomeChange = computed(() => {
-  if (todayIncome.value == null) return 0;
+  if (todayIncome.value === 0 && yesterdayIncome.value === 0) return 0;  
+
+  if (yesterdayIncome.value === 0 && todayIncome.value > 0) return 100;  
   return (((todayIncome.value - yesterdayIncome.value) / yesterdayIncome.value) * 100).toFixed(1);
 });
 const dueChange = computed(() => {
-  if (todayDue.value == null) return 0;
+  if (todayDue.value === 0 && yesterdayDue.value === 0) return 0;
+  if (yesterdayDue.value === 0 && todayDue.value > 0) return 100;
   return (((todayDue.value - yesterdayDue.value) / yesterdayDue.value) * 100).toFixed(1);
 });
 const expenseChange = computed(() => {
-  if (todayExpense.value == null) return 0;
+  if (todayExpense.value === 0 && yesterdayExpense.value === 0) return 0;
+  if (yesterdayExpense.value === 0 && todayExpense.value > 0) return 100;
+  if (yesterdayExpense.value === 0 && todayExpense.value < 0) return -100;
   return (((todayExpense.value - yesterdayExpense.value) / yesterdayExpense.value) * 100).toFixed(1);
 });
 
@@ -228,11 +237,60 @@ const fetchTodayExpense = async () => {
   }
 };
 
+// Loading states
+const loading = ref({
+  today: true,
+  yesterday: true
+})
+
+// Fetch yesterday's data
+
+const fetchYesterdaySale = async () => {
+  try {
+    const res = await axios.get('/api/yesterday/sales');
+    console.log("yesterdaySale", res.data.amount);
+    yesterdaySale.value = res.data.amount || 0;
+  } catch (error) {
+    console.error('Error fetching yesterdaySale:', error);
+  }
+};
+const fetchYesterdayIncome = async () => {
+  try {
+    const res = await axios.get('/api/yesterday/income');
+    yesterdayIncome.value = res.data.amount || 0;
+  } catch (error) {
+    console.error('Error fetching yesterdayIncome:', error);
+  }
+};
+const fetchYesterdayDue = async () => {
+  try {
+    const res = await axios.get('/api/yesterday/due');
+    yesterdayDue.value = res.data.amount || 0;
+  } catch (error) {
+    console.error('Error fetching yesterdayDue:', error);
+  }
+};
+const fetchYesterdayExpense = async () => {
+  try {
+    const res = await axios.get('/api/yesterday/expense');
+    yesterdayExpense.value = res.data.amount || 0;
+  } catch (error) {
+    console.error('Error fetching yesterdayExpense:', error);
+  }
+};
+
+
 onMounted(() => {
   fetchTodaySale();
   fetchTodayIncome();
   fetchTodayDue();
   fetchTodayExpense();
+  fetchYesterdaySale();
+  fetchYesterdayIncome();
+  fetchYesterdayDue();
+  fetchYesterdayExpense();
+  loading.value.today = false;
+  loading.value.yesterday = false;
 });
 </script>
 

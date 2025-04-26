@@ -140,7 +140,7 @@ class OrderController extends Controller
 
     // -------------------- Today Sell ----------------
 
-    public function todaySell()
+    public function todaySale()
     {
         $date = date('d/m/Y');
         $sell = Order::where('date', $date)->sum('total');
@@ -163,5 +163,73 @@ class OrderController extends Controller
         $today = Carbon::now()->format('d/m/Y');
         $due = Order::where('date', $today)->sum('due');
         return response()->json($due);
+    }
+
+    private function getYesterdayDate()
+    {
+        return Carbon::yesterday()->format('Y-m-d');
+    }
+
+    /**
+     * Get yesterday's sales total
+     */
+    public function yesterdaySales()
+    {
+        $yesterday = $this->getYesterdayDate();
+        
+        $total = Order::whereDate('created_at', $yesterday)
+                    ->sum('total');
+        return response()->json([
+            'amount' => (float) $total,
+            'date' => $yesterday
+        ]);
+    }
+
+    /**
+     * Get yesterday's income total
+     */
+    public function yesterdayIncome()
+    {
+        $yesterday = $this->getYesterdayDate();
+        
+        $total = Order::whereDate('created_at', $yesterday)
+                      ->sum('paid');
+        
+        return response()->json([
+            'amount' => (float) $total,
+            'date' => $yesterday
+        ]);
+    }
+
+    /**
+     * Get yesterday's due total
+     */
+    public function yesterdayDue()
+    {
+        $yesterday = $this->getYesterdayDate();
+        
+        $total = Order::whereDate('created_at', $yesterday)
+                   ->sum('due');
+        
+        return response()->json([
+            'amount' => (float) $total,
+            'date' => $yesterday
+        ]);
+    }
+
+    /**
+     * Get yesterday's expense total
+     */
+    public function yesterdayExpense()
+    {
+        $yesterday = $this->getYesterdayDate();
+        
+        $total = Order::whereDate('created_at', $yesterday)
+                       ->sum('expense');
+        
+        return response()->json([
+            'amount' => (float) $total,
+            'date' => $yesterday
+        ]);
     }
 }
