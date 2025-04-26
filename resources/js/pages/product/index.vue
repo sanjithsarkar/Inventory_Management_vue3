@@ -1,211 +1,432 @@
+<template>
+    <div class="product-management-container">
+        <!-- Header with actions -->
+        <div class="header-container">
+            <h2 class="page-title">Product Management</h2>
+            <div class="action-buttons">
+                <el-input v-model="searchQuery" placeholder="Search products..." clearable style="width: 300px"
+                    @clear="handleSearchClear">
+                    <template #prefix>
+                        <el-icon>
+                            <Search />
+                        </el-icon>
+                    </template>
+                </el-input>
+
+                <el-button type="primary" @click="goToCreateProduct">
+                    <el-icon>
+                        <Plus />
+                    </el-icon> 
+                    <span>Add Product</span>
+                </el-button>
+
+                <el-button type="danger" :disabled="selectedProductIds.length === 0" @click="confirmBulkDelete">
+                    <el-icon>
+                        <Delete />
+                    </el-icon> 
+                    <span>Delete Selected</span>
+                </el-button>
+            </div>
+        </div>
+
+        <!-- Product Table -->
+        <el-card shadow="never" class="table-card">
+            <el-table v-loading="loading" :data="productData.data" style="width: 100%"
+                @selection-change="handleSelectionChange" border stripe>
+                <el-table-column type="selection" width="50" />
+
+                <el-table-column prop="id" label="ID" width="65" sortable />
+
+                <el-table-column prop="name" label="Name" width="200" sortable>
+                    <template #default="{ row }">
+                        <router-link :to="`/product/edit/${row.id}`" class="product-link">
+                            {{ row.name }}
+                        </router-link>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="category_id" label="Category" width="130" sortable />
+
+                <el-table-column prop="quantity" label="Quantity" width="120" sortable>
+                    <template #default="{ row }">
+                        <el-tag :type="row.quantity > 0 ? 'success' : 'danger'">
+                            {{ row.quantity }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+
+                <el-table-column prop="selling_price" label="Selling Price" width="130" sortable />
+                <el-table-column prop="supplier_id" label="Supplier" width="110" sortable />
+                <el-table-column prop="buying_date" label="Buying Date" width="125" sortable />
+                
+
+                <el-table-column label="Image" width="105">
+                    <template #default="{ row }">
+                        <el-image v-if="row.image_url" :src="row.image_url" :alt="row.name" fit="cover"
+                            style="width: 50px; height: 50px" :preview-src-list="[row.image_url]" hide-on-click-modal>
+                            <template #error>
+                                <div class="image-error">
+                                    <el-icon>
+                                        <Picture />
+                                    </el-icon>
+                                </div>
+                            </template>
+                        </el-image>
+                        <el-tag v-else type="info">No Image</el-tag>
+                    </template>
+                </el-table-column>
+
+                <el-table-column label="Actions" width="145" fixed="right">
+                    <template #default="{ row }">
+                        <el-tooltip content="Edit Product" placement="top">
+                            <el-button size="small" type="primary" @click="goToEditProduct(row.id)" circle>
+                                <el-icon>
+                                    <Edit />
+                                </el-icon>
+                            </el-button>
+                        </el-tooltip>
+
+                        <el-tooltip content="View Details" placement="top">
+                            <el-button type="info" size="small" circle @click="viewProductDetails(row)">
+                                <el-icon>
+                                    <View />
+                                </el-icon>
+                            </el-button>
+                        </el-tooltip>
+
+                        <el-tooltip content="Delete Product" placement="top">
+                            <el-button size="small" type="danger" @click="confirmDeleteProduct(row.id)" circle>
+                                <el-icon>
+                                    <Delete />
+                                </el-icon>
+                            </el-button>
+                        </el-tooltip>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <!-- Pagination -->
+            <div class="pagination-container">
+                <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize"
+                    :total="productData.total || 0" :page-sizes="[10, 20, 50, 100]"
+                    layout="total, sizes, prev, pager, next, jumper" background @size-change="handleSizeChange"
+                    @current-change="handlePageChange" />
+            </div>
+        </el-card>
+    </div>
+
+
+    <el-dialog v-model="detailsVisible" title="Product Details" width="700px" destroy-on-close>
+        <div v-if="selectedProduct" class="flex flex-col md:flex-row gap-6">
+            <div class="md:w-1/3">
+                <el-image v-if="selectedProduct.image_url" :src="selectedProduct.image_url" fit="cover"
+                    class="w-full rounded-lg border border-gray-200">
+                    <template #error>
+                        <div class="flex items-center justify-center h-48 bg-gray-100 text-gray-400 rounded-lg">
+                            <el-icon :size="40">
+                                <PictureFilled />
+                            </el-icon>
+                        </div>
+                    </template>
+                </el-image>
+                <div v-else class="flex items-center justify-center h-48 bg-gray-100 text-gray-400 rounded-lg">
+                    <el-icon :size="40">
+                        <PictureFilled />
+                    </el-icon>
+                </div>
+            </div>
+
+            <div class="md:w-2/3">
+                <h3 class="text-xl font-bold mb-4">{{ selectedProduct.name }}</h3>
+
+                <el-descriptions :column="1" border>
+                    <el-descriptions-item label="Category">{{ selectedProduct.category_id }}</el-descriptions-item>
+                    <el-descriptions-item label="SKU">{{ selectedProduct.sku || 'N/A' }}</el-descriptions-item>
+                    <el-descriptions-item label="Price">${{ formatPrice(selectedProduct.price) }}</el-descriptions-item>
+                    <el-descriptions-item label="Quantity">{{ selectedProduct.quantity }}</el-descriptions-item>
+                    <el-descriptions-item label="Status">
+                        <el-tag :type="selectedProduct.status === 'active' ? 'success' : 'danger'" effect="dark">
+                            {{ selectedProduct.status || 'Active' }}
+                        </el-tag>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="Description">
+                        {{ selectedProduct.description || 'No description available' }}
+                    </el-descriptions-item>
+                </el-descriptions>
+            </div>
+        </div>
+
+        <template #footer>
+            <div class="flex justify-between">
+                <el-button @click="detailsVisible = false">Close</el-button>
+                <div>
+                    <el-button type="primary" @click="goToEditProduct(selectedProduct)">Edit</el-button>
+                    <el-popconfirm title="Are you sure you want to delete this product?"
+                        @confirm="deleteAndCloseDialog(selectedProduct.id)">
+                        <template #reference>
+                            <el-button type="danger">Delete</el-button>
+                        </template>
+                    </el-popconfirm>
+                </div>
+            </div>
+        </template>
+    </el-dialog>
+</template>
+
 <script setup>
-import { ref, onMounted, watch, reactive, computed } from 'vue';
-import { Bootstrap5Pagination } from 'laravel-vue-pagination';
-import { debounce } from 'lodash';
-import { useToastr } from '../../Helper/toaster';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
+import { ref, onMounted, watch } from 'vue'
+import { debounce } from 'lodash-es'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { ElMessageBox, ElNotification } from 'element-plus'
+import {
+    Search,
+    Plus,
+    Delete,
+    Edit,
+    Picture,
+    Refresh,
+    PictureFilled,
+    View,
+    ArrowDown,
+    Check,
+    CloseBold,
+    Download,
+    List,
+    Grid,
+    Goods
+} from '@element-plus/icons-vue'
 
-const toastr = useToastr();
+const router = useRouter()
+const loading = ref(false)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const productData = ref({ data: [] })
+const selectedProductIds = ref([])
 
-const productData = ref({ 'data': '' });
-
-const searchQuery = ref(null);
-
-const router = useRouter();
-
-const getProducts = (page = 1) => {
-    axios.get('/api/products?page=' + page, {
-        params: {
-            query: searchQuery.value
-        }
-    })
-        .then(response => {
-            productData.value = response.data;
+// Fetch products with debounce
+const getProducts = debounce(async (page = 1) => {
+    try {
+        loading.value = true
+        const response = await axios.get('/api/products', {
+            params: {
+                page,
+                per_page: pageSize.value,
+                query: searchQuery.value
+            }
         })
-        .catch(res => {
-            console.log(res.data);
+        productData.value = response.data
+    } catch (error) {
+        console.error('Error fetching products:', error)
+        ElNotification.error({
+            title: 'Error',
+            message: 'Failed to fetch products'
         })
+    } finally {
+        loading.value = false
+    }
+}, 300)
+
+// Handle selection change
+const handleSelectionChange = (selection) => {
+    selectedProductIds.value = selection.map(item => item.id)
 }
 
+// Handle page change
+const handlePageChange = (page) => {
+    currentPage.value = page
+    getProducts(page)
+}
 
-const deleteProduct = (id) => {
-    if (window.confirm("Are you sure you want to delete this item?")) {
-        axios.delete('/api/products/' + id)
-            .then(() => {
-                productData.value.data = productData.value.data.filter(product => product.id != id);
-                router.push({ path: '/product' })
-                toastr.error('Product Deleted Successfully!!');
-            })
-            .catch(error => {
-                console.log(error);
-            })
+// Handle page size change
+const handleSizeChange = (size) => {
+    pageSize.value = size
+    getProducts(currentPage.value)
+}
+
+// Handle search clear
+const handleSearchClear = () => {
+    searchQuery.value = ''
+    getProducts(1)
+}
+
+// Navigation
+const goToCreateProduct = () => {
+    router.push('/product/create')
+}
+
+const formatPrice = (price) => {  
+  if (!price) return '0.00';  
+  return Number(price).toFixed(2);  
+};  
+
+const selectedProduct = ref(null);  
+
+const detailsVisible = ref(false);  
+const goToEditProduct = (id) => {
+    router.push(`/product/edit/${id}`)
+}
+const viewProductDetails = (product) => {  
+  selectedProduct.value = product;  
+  detailsVisible.value = true;  
+};  
+
+// Delete confirmation
+const confirmDeleteProduct = (id) => {
+    ElMessageBox.confirm(
+        'Are you sure you want to delete this product?',
+        'Warning',
+        {
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            type: 'warning',
+        }
+    ).then(() => {
+        deleteProduct(id)
+    }).catch(() => { })
+}
+
+const confirmBulkDelete = () => {
+    if (selectedProductIds.value.length === 0) return
+
+    ElMessageBox.confirm(
+        `Are you sure you want to delete ${selectedProductIds.value.length} selected products?`,
+        'Warning',
+        {
+            confirmButtonText: 'Delete',
+            cancelButtonText: 'Cancel',
+            type: 'warning',
+        }
+    ).then(() => {
+        bulkDelete()
+    }).catch(() => { })
+}
+
+// Delete operations
+const deleteProduct = async (id) => {
+    try {
+        await axios.delete(`/api/products/${id}`)
+        productData.value.data = productData.value.data.filter(
+            product => product.id !== id
+        )
+        ElNotification.success({
+            title: 'Success',
+            message: 'Product deleted successfully'
+        })
+    } catch (error) {
+        console.error('Error deleting product:', error)
+        ElNotification.error({
+            title: 'Error',
+            message: 'Failed to delete product'
+        })
     }
 }
 
+const bulkDelete = async () => {
+    try {
+        await axios.delete('/api/products', {
+            data: { ids: selectedProductIds.value }
+        })
+        getProducts(currentPage.value)
+        selectedProductIds.value = []
+        ElNotification.success({
+            title: 'Success',
+            message: 'Selected products deleted successfully'
+        })
+    } catch (error) {
+        console.error('Error bulk deleting products:', error)
+        ElNotification.error({
+            title: 'Error',
+            message: 'Failed to delete selected products'
+        })
+    }
+}
 
-// ----------------------- toggle Selection -----------------------
-
-const selectedProductIds = ref([]);
-const errors = ref(null);
-
-// const toggleSelection = (productId) => {
-//     // selectedProduct.value.push(product.id);
-//     // console.log(selectedProduct.value);
-
-//     const index = selectedProduct.value.indexOf(productId);
-//     if (index > -1) {
-//         selectedProduct.value.splice(index, 1);
-//     } else {
-//         selectedProduct.value.push(productId);
-//     }
-//     console.log(selectedProduct.value);
-// }
-
-
-// --------------------- bulkDelete ------------------
-
-// const bulkDelete = () => {
-//     axios.delete('/api/products', {
-//         data: {
-//             ids: selectedProductIds.value,
-//         },
-//     })
-//         .then((res) => {
-//             if (res.data.errors) {
-//                 console.log(res.data.errors);
-//                 errors.value = res.data.errors;
-//                 toastr.error('Product did not selected!!');
-//             }else{
-//                 methodRefreshByDebounce();
-//                 toastr.success('Product Deleted Successfully!!');
-//             }
-//         })
-//         .catch((error) => {
-//             // alert('Error deleting selected products');
-//             errors.value = error.response.data.errors;
-//             console.log(error.response.data.errors);
-//         });
-
-// }
-
-
-
-
-const bulkDelete = () => {
-    // Show a confirmation dialog using SweetAlert
-    Swal.fire({
-        title: 'Confirm Deletion',
-        text: 'Are you sure you want to delete the selected products?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Yes, delete it!',
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // User confirmed the deletion, proceed with axios delete request
-            axios.delete('/api/products', {
-                data: {
-                    ids: selectedProductIds.value,
-                },
-            })
-                .then((res) => {
-                    if (res.data.errors) {
-                        console.log(res.data.errors);
-                        errors.value = res.data.errors;
-                        toastr.error('Product was not selected!!');
-                    } else {
-                        methodRefreshByDebounce();
-                        toastr.success('Product Deleted Successfully!!');
-                    }
-                })
-                .catch((error) => {
-                    // alert('Error deleting selected products');
-                    errors.value = error.response.data.errors;
-                    console.log(error.response.data.errors);
-                });
-        }
-    });
-};
-
-
-
-
-// ----------------- bulk delete selected all -------------------------
-
-
-
-watch([searchQuery], debounce(() => {
-    getProducts();
-}, 300));
-
-
-const methodRefreshByDebounce = debounce(() => {
-    getProducts();
-}, 300)
-
-onMounted(() => {
-    getProducts();
+// Watchers and lifecycle hooks
+watch(searchQuery, () => {
+    currentPage.value = 1
+    getProducts(1)
 })
 
-
+onMounted(() => {
+    getProducts(1)
+})
 </script>
-<template>
-    <section id="employee-index" class="p-4">
-        <div class="add-link d-flex justify-content-between">
-            <div>
-                <button class="btn btn-primary"><router-link to="/product/create" class="text-white"
-                        style="text-decoration: none;">Add Product</router-link></button>
-                <button @click="bulkDelete" class="btn btn-danger ml-2">Delete Selected</button>
 
-            </div>
+<style scoped>
+.product-management-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
 
-            <div>
-                <input type="text" v-model="searchQuery" placeholder="Search...">
-            </div>
-        </div>
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
 
-        <div class="d-flex justify-content-center">
-            <h4 class="">Product List</h4>
-        </div>
+.page-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
 
-        <div>
-            <table id="table" class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox"></th>
-                        <th>Serial No</th>
-                        <th>Name</th>
-                        <th>category_id</th>
-                        <th>Quantity</th>
-                        <th>Image</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tablecontents">
-                    <tr v-for="(product, index) in productData.data" :key="product.id">
-                        <td><input type="checkbox" :value="product.id" v-model="selectedProductIds"></td>
-                        <td>{{ ++index }}</td>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.category_id }}</td>
-                        <td>{{ product.quantity }}</td>
-                        <td> <img v-if="product.image_url" :src="product.image_url" :alt="product.name"
-                                class="img-thumbnail" style="height: 50px; width: auto;">
-                            <span v-else>No image</span>
-                        </td>
-                        <td><router-link :to="`/product/edit/${product.id}`"
-                                class="btn btn-success mr-2">Edit</router-link>
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
 
-                            <a @click="deleteProduct(product.id)" class="btn btn-danger">Delete</a>
-                        </td>
-                        <!-- <td><router-link :to="{ name: 'product-edit', params: { id: emp.id } }">
-                                Edit
-                            </router-link></td> -->
-                    </tr>
-                </tbody>
-            </table>
-            <Bootstrap5Pagination :data="productData" @pagination-change-page="getProducts" />
-        </div>
-    </section>
-</template>
+.table-card {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.pagination-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.product-link {
+    color: var(--el-color-primary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.product-link:hover {
+    color: var(--el-color-primary-light-3);
+    text-decoration: underline;
+}
+
+.image-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    background-color: #f5f5f5;
+    color: #999;
+}
+
+@media (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .action-buttons {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .el-input {
+        width: 100% !important;
+    }
+}
+</style>
