@@ -1,3 +1,5 @@
+
+```vue
 <template>
   <div class="dashboard-container">
     <h2>Today's Financial Summary</h2>
@@ -119,8 +121,7 @@
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router';
-import { computed, onMounted, ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 
 import {
@@ -132,37 +133,47 @@ import {
   CaretBottom
 } from '@element-plus/icons-vue';
 
-// Sample data - replace with your actual data
-const todaySale = ref();
-const todayIncome = ref();
-const todayDue = ref();
-const todayExpense = ref();
+// Reactive state for today's data
+const todaySale = ref(null);
+const todayIncome = ref(null);
+const todayDue = ref(null);
+const todayExpense = ref(null);
 
-// Yesterday's data for comparison
+// Yesterday's static data (could be fetched similarly)
 const yesterdaySale = ref(11850.00);
 const yesterdayIncome = ref(8950.00);
 const yesterdayDue = ref(2935.75);
 const yesterdayExpense = ref(2980.25);
 
-// Calculate percentage changes
-const saleChange = computed(() => 
-  ((todaySale.value - yesterdaySale.value) / yesterdaySale.value * 100).toFixed(1)
-);
-const incomeChange = computed(() => 
-  ((todayIncome.value - yesterdayIncome.value) / yesterdayIncome.value * 100).toFixed(1)
-);
-const dueChange = computed(() => 
-  ((todayDue.value - yesterdayDue.value) / yesterdayDue.value * 100).toFixed(1)
-);
-const expenseChange = computed(() => 
-  ((todayExpense.value - yesterdayExpense.value) / yesterdayExpense.value * 100).toFixed(1)
-);
+// Defensive computed to prevent NaN or errors
+const saleChange = computed(() => {
+  if (todaySale.value == null) return 0;
+  return (((todaySale.value - yesterdaySale.value) / yesterdaySale.value) * 100).toFixed(1);
+});
+const incomeChange = computed(() => {
+  if (todayIncome.value == null) return 0;
+  return (((todayIncome.value - yesterdayIncome.value) / yesterdayIncome.value) * 100).toFixed(1);
+});
+const dueChange = computed(() => {
+  if (todayDue.value == null) return 0;
+  return (((todayDue.value - yesterdayDue.value) / yesterdayDue.value) * 100).toFixed(1);
+});
+const expenseChange = computed(() => {
+  if (todayExpense.value == null) return 0;
+  return (((todayExpense.value - yesterdayExpense.value) / yesterdayExpense.value) * 100).toFixed(1);
+});
 
-// Calculate net profit and profit margin
-const netProfit = computed(() => todayIncome.value - todayExpense.value);
-const profitMargin = computed(() => (netProfit.value / todayIncome.value) * 100);
+// Net profit & margin with safe division
+const netProfit = computed(() => {
+  if (todayIncome.value == null || todayExpense.value == null) return 0;
+  return todayIncome.value - todayExpense.value;
+});
+const profitMargin = computed(() => {
+  if (todayIncome.value == null || todayIncome.value === 0) return 0;
+  return (netProfit.value / todayIncome.value) * 100;
+});
 
-// Current date
+// Current date formatted
 const currentDate = new Date().toLocaleDateString('en-US', {
   weekday: 'long',
   year: 'numeric',
@@ -170,56 +181,59 @@ const currentDate = new Date().toLocaleDateString('en-US', {
   day: 'numeric'
 });
 
-// Helper function to format numbers
+// Number formatter with fallback
 const formatNumber = (num) => {  
   if (num === undefined || num === null || isNaN(num)) return '-';  
   return Number(num).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');  
 };  
 
-// -------------- Today Sell ---------------------
+// Fetch functions with error handling and consistent API URL paths
+const fetchTodaySale = async () => {
+  try {
+    const res = await axios.get('/api/today/sell');
+    todaySale.value = res.data ?? 0;
+  } catch (error) {
+    todaySale.value = 0;
+    console.error('Error fetching todaySale:', error);
+  }
+};
 
-const todaySellData = () => {
-    axios.get('/api/today/sell')
-    .then((res) =>{
-      todaySale.value = res.data;
-    })
-    .catch
-}
+const fetchTodayIncome = async () => {
+  try {
+    const res = await axios.get('/api/today/income');
+    todayIncome.value = res.data ?? 0;
+  } catch (error) {
+    todayIncome.value = 0;
+    console.error('Error fetching todayIncome:', error);
+  }
+};
 
+const fetchTodayDue = async () => {
+  try {
+    const res = await axios.get('/api/today/due');
+    todayDue.value = res.data ?? 0;
+  } catch (error) {
+    todayDue.value = 0;
+    console.error('Error fetching todayDue:', error);
+  }
+};
 
-// ------------- Today INcome --------------
+const fetchTodayExpense = async () => {
+  try {
+    const res = await axios.get('/api/today/expense');
+    todayExpense.value = res.data ?? 0;
+  } catch (error) {
+    todayExpense.value = 0;
+    console.error('Error fetching todayExpense:', error);
+  }
+};
 
-const todayIncomeData = () => {
-    axios.get('/api/today/income')
-    .then((res) => {
-      todayIncome.value = res.data;
-    })
-}
-
-// ----------- Today Due -------------
-
-const todayDueData = () => {
-    axios.get('api/today/due')
-    .then((res) => {
-        todayDue.value = res.data;
-    })
-}
-
-// ----------- Today Expense -------------
-
-const todayExpenseData = () => {
-    axios.get('api/today/expense')
-    .then((res) => {
-        todayExpense.value = res.data;
-    })
-}
-
-onMounted(()=>{
-    todaySellData();
-    todayIncomeData();
-    todayDueData();
-    todayExpenseData();
-})
+onMounted(() => {
+  fetchTodaySale();
+  fetchTodayIncome();
+  fetchTodayDue();
+  fetchTodayExpense();
+});
 </script>
 
 <style scoped>
@@ -232,6 +246,7 @@ onMounted(()=>{
 .date-display {
   color: #666;
   margin-bottom: 20px;
+  font-weight: 500;
 }
 
 .metric-card {
@@ -280,19 +295,21 @@ onMounted(()=>{
   margin: 0;
   font-size: 1rem;
   color: #666;
+  font-weight: 600;
 }
 
 .metric-value {
   font-size: 1.5rem;
   font-weight: bold;
-  margin: 5px 0;
+  margin: 4px 0 8px 0;
 }
 
 .metric-change {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
+  font-weight: 500;
 }
 
 .positive {
@@ -317,6 +334,8 @@ onMounted(()=>{
 
 .summary-chart h3 {
   margin-top: 0;
+  font-weight: 600;
+  color: #333;
 }
 
 .chart-container {
@@ -335,3 +354,7 @@ onMounted(()=>{
   }
 }
 </style>
+```
+---
+
+Let me know if you'd like me to help further— e.g., add loading states, error displays, or dynamic yesterday data fetching!
