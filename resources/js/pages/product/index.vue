@@ -16,14 +16,14 @@
                 <el-button type="primary" @click="goToCreateProduct">
                     <el-icon>
                         <Plus />
-                    </el-icon> 
+                    </el-icon>
                     <span>Add Product</span>
                 </el-button>
 
                 <el-button type="danger" :disabled="selectedProductIds.length === 0" @click="confirmBulkDelete">
                     <el-icon>
                         <Delete />
-                    </el-icon> 
+                    </el-icon>
                     <span>Delete Selected</span>
                 </el-button>
             </div>
@@ -45,7 +45,7 @@
                     </template>
                 </el-table-column>
                 <el-table-column prop="sku" label="SKU" width="135" sortable />
-                <el-table-column prop="category_id" label="Category" width="130" sortable />
+                <el-table-column prop="category.name" label="Category" width="130" sortable />
 
                 <el-table-column prop="quantity" label="Quantity" width="110" sortable>
                     <template #default="{ row }">
@@ -57,7 +57,6 @@
 
                 <el-table-column prop="selling_price" label="Sale Price" width="120" sortable />
                 <el-table-column prop="buying_date" label="Buying Date" width="125" sortable />
-                
 
                 <el-table-column label="Image" width="100">
                     <template #default="{ row }">
@@ -119,9 +118,9 @@
         <div v-if="selectedProduct" class="flex flex-col md:flex-row gap-6">
             <div class="md:w-1/3">
                 <el-image v-if="selectedProduct.image_url" :src="selectedProduct.image_url" fit="cover"
-                    class="w-full rounded-lg border border-gray-200">
+                    class="h-3/12 object-cover rounded-lg border border-gray-200">
                     <template #error>
-                        <div class="flex items-center justify-center h-48 bg-gray-100 text-gray-400 rounded-lg">
+                        <div class="flex items-center justify-center bg-gray-100 text-gray-400 rounded-lg">
                             <el-icon :size="40">
                                 <PictureFilled />
                             </el-icon>

@@ -45,6 +45,7 @@ class ProductController extends Controller
         ->when($searchCategory, function ($query) use ($searchCategory) {
             $query->where('category_id', $searchCategory);
         })
+        ->with('category')
         ->latest()
         ->paginate(10);
 
@@ -124,6 +125,11 @@ class ProductController extends Controller
             // dd($imagePath);
             // If you need the full URL for frontend access:
             // $imageUrl = asset('storage/'.$imagePath);
+        }
+
+        #if image more than 2mb
+        if ($request->hasFile('image') && $request->file('image')->getSize() > 2048000) {
+            return response()->json(['error' => 'Image size exceeds 2MB.'], 422);
         }
 
         // Generate Advanced SKU
