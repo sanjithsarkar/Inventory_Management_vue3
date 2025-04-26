@@ -230,11 +230,9 @@ const remainingPayment = computed(() => {
 
 // Methods
 const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(value || 0);
+  return Number(value).toFixed(2);
 };
+
 
 const getCategories = async () => {
     try {

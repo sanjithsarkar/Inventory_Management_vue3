@@ -121,6 +121,7 @@ class OrderController extends Controller
 
     // ------------------- get order by id --------------------
 
+
     public function getOrder($id)
     {
         $order = Order::with('customer')->where('id', $id)->get();
@@ -159,8 +160,8 @@ class OrderController extends Controller
 
     public function todayDue()
     {
-        $date = date('d/m/Y');
-        $due = Order::where('date', $date)->sum('due');
+        $today = Carbon::now()->format('d/m/Y');
+        $due = Order::where('date', $today)->sum('due');
         return response()->json($due);
     }
 }
