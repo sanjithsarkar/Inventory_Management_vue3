@@ -34,7 +34,6 @@ class ProductController extends Controller
     // }
 
     public function index(Request $request)
-{
     {
         $searchQuery = $request->get('query');
         $searchCategory = $request->get('category');
