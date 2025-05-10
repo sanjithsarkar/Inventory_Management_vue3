@@ -1,191 +1,176 @@
 <script setup>
-import axios from 'axios';
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import axios from 'axios'
+import { Edit, Delete, Plus } from '@element-plus/icons-vue'
 
-const form = ref({});
-const errors = ref({});
-const router = useRouter();
-const categoriesData = ref({});
-const editing = ref(false);
-const currntEditingId = ref();
-const isModalAvailable = ref(false);
-
-
-// ---------- Modal -----------
-
-const showModal = () => {
-    isModalAvailable.value = true;
-};
-
-const hideModal = () => {
-    isModalAvailable.value = false;
-};
-
-// ------------ Get All Categories ---------------
-
-const getCategories = () => {
-
-    axios.get('/api/categories')
-        .then((res) => {
-            categoriesData.value = res.data;
-        })
-        .catch()
-}
-
-onMounted(() => {
-    getCategories();
+// Reactive data
+const form = ref({ id: null, name: '' })
+const categories = ref([])
+const loading = ref(false)
+const dialogVisible = ref(false)
+const dialogTitle = ref('Add Category')
+const formRules = ref({
+    name: [{ required: true, message: 'Please input category name', trigger: 'blur' }]
 })
 
-
-// ----------------- Submit method ---------------
-
-const handleSubmit = () => {
-    if (editing.value) {
-        updateCategory();
-    } else {
-        createCategory();
+// Fetch categories
+const fetchCategories = async () => {
+    loading.value = true
+    try {
+        const response = await axios.get('/api/categories')
+        categories.value = response.data
+    } catch (error) {
+        ElMessage.error('Failed to fetch categories')
+    } finally {
+        loading.value = false
     }
 }
 
-
-// -------------- Show Add Category modal ------------------
-
-const addCategory = () => {
-    editing.value = false;
-    showModal();
+// Handle form submission
+const handleSubmit = async () => {
+    try {
+        if (form.value.id) {
+            await axios.put(`/api/categories/${form.value.id}`, form.value)
+            const index = categories.value.findIndex(cat => cat.id === form.value.id)
+            categories.value[index] = form.value;
+            ElMessage.success('Category updated successfully')
+        } else {
+            const response = await axios.post('/api/categories', form.value)
+            categories.value.unshift(response.data)
+            ElMessage.success('Category added successfully')
+        }
+        dialogVisible.value = false
+        resetForm()
+    } catch (error) {
+        if (error.response?.data?.errors) {
+            ElMessage.error(error.response.data.errors.name?.[0] || 'Validation error')
+        } else {
+            ElMessage.error('An error occurred')
+        }
+    }
 }
 
+// Open dialog for adding
+const openAddDialog = () => {
+    resetForm()
+    dialogTitle.value = 'Add Category'
+    dialogVisible.value = true
+}
 
-// -------------- Create Category Data --------------
+// Open dialog for editing
+const openEditDialog = (category) => {
+    form.value = { ...category }
+    dialogTitle.value = 'Edit Category'
+    dialogVisible.value = true
+}
 
-const createCategory = () => {
-    currntEditingId.value = null;
-
-    axios.post('/api/categories', form.value)
-        .then((response) => {
-            if (response.data.errors) {
-                errors.value = response.data.errors;
-            } else {
-                hideModal();
-                categoriesData.value.unshift(response.data)
-                form.value.name = '';
+// Delete category
+const deleteCategory = async (id) => {
+    try {
+        await ElMessageBox.confirm(
+            'Are you sure to delete this category?',
+            'Warning',
+            {
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Cancel',
+                type: 'warning',
             }
-        })
-        .catch((res) => {
-            errors.value = res.response.data.errors;
-        })
+        )
+        await axios.delete(`/api/categories/${id}`)
+        categories.value = categories.value.filter(cat => cat.id !== id)
+        ElMessage.success('Category deleted successfully')
+    } catch (error) {
+        if (error !== 'cancel') {
+            ElMessage.error('Failed to delete category')
+        }
+    }
 }
 
-// -------------- Show Edit Modal -------------
-
-const editCategory = (category) => {
-    currntEditingId.value = category.id;
-    editing.value = true;
-    showModal();
-    form.value = category;
+// Reset form
+const resetForm = () => {
+    form.value = { id: null, name: '' }
 }
 
-//---------- update Category --------------
-
-const updateCategory = () => {
-    axios.put('api/categories/' + currntEditingId.value, form.value)
-        .then(() => {
-            hideModal();
-            getCategories();
-            form.value.name = '';
-        })
-}
-
-
+// Fetch categories on mount
+onMounted(() => {
+    fetchCategories()
+})
 </script>
 
 <template>
-    <section id="employee-index" class="p-4">
-        <div class="row d-flex justify-content-center">
-            <div class="col-md-8">
-                <div class="add-link d-flex justify-content-between">
-                    <button @click="addCategory" class="btn btn-primary">Add
-                        Category</button>
-
-                    <div v-if="isModalAvailable" class="category-modal">
-                        <div class="category-modal-content">
-                            <div class="modal-header">
-                                <h1 class="modal-title fs-5" v-if="editing" id="exampleModalLabel">Edit Category</h1>
-                                <h1 class="modal-title fs-5" v-else id="exampleModalLabel">Add Category</h1>
-                                <button type="button" @click="hideModal" class="badge badge-primary" data-bs-dismiss="modal"
-                                    aria-label="Close">x</button>
-
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Email address</label>
-                                    <input type="text" class="form-control" id="name" v-model="form.name"
-                                        placeholder="name">
-                                    <small class="text-danger" v-if="errors.name"> {{ errors.name[0] }} </small>
-                                </div>
-
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" @click="hideModal" class="btn btn-secondary"
-                                    data-bs-dismiss="modal">Close</button>
-                                <button @click="handleSubmit" type="button" class="btn btn-primary">Save</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <!-- <input type="text" v-model="searchQuery" placeholder="Search..."> -->
-                    </div>
+    <div class="category-management p-6">
+        <el-card class="box-card">
+            <template #header>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold">Category Management</h2>
+                    <el-button type="primary" @click="openAddDialog">
+                        <el-icon class="mr-1">
+                            <plus />
+                        </el-icon>
+                        Add Category
+                    </el-button>
                 </div>
+            </template>
 
-                <div class="d-flex justify-content-center">
-                    <h4 class="my-4">Category List</h4>
-                </div>
+            <el-table :data="categories" v-loading="loading" style="width: 100%">
+                <el-table-column prop="id" label="ID" width="80" />
+                <el-table-column prop="name" label="Name" />
+                <el-table-column label="Actions" width="150">
+                    <template #default="scope">
+                        <el-tooltip content="Edit Product" placement="top">
+                            <el-button size="small" type="primary" @click="openEditDialog(scope.row)" circle>
+                                <el-icon>
+                                    <Edit />
+                                </el-icon>
+                            </el-button>
+                        </el-tooltip>
+                        <el-tooltip content="Delete Product" placement="top">
+                            <el-button size="small" type="danger" @click="deleteCategory(scope.row.id)" circle>
+                                <el-icon>
+                                    <Delete />
+                                </el-icon>
+                            </el-button>
+                        </el-tooltip>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-card>
 
-                <div>
-                    <table id="table" class="table table-bordered table-hover">
-                        <thead>
-                            <tr>
-                                <th>Serial No</th>
-                                <th>Name</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablecontents">
-                            <tr v-for="(cat, index) in categoriesData" :key="cat.id">
-                                <td>{{ ++index }}</td>
-                                <td>{{ cat.name }}</td>
-                                <td>
-                                    <a href="#" @click.prevent="editCategory(cat)"> <i class="fa fa-edit"></i></a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </section>
+        <!-- Add/Edit Dialog -->
+        <el-dialog v-model="dialogVisible" :title="dialogTitle" width="30%">
+            <el-form :model="form" :rules="formRules" label-width="120px">
+                <el-form-item label="Category Name" prop="name">
+                    <el-input v-model="form.name" placeholder="Enter category name" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="dialogVisible = false">Cancel</el-button>
+                    <el-button type="primary" @click="handleSubmit">
+                        {{ form.id ? 'Update' : 'Create' }}
+                    </el-button>
+                </span>
+            </template>
+        </el-dialog>
+    </div>
 </template>
 
-<style>
-.category-modal {
-    position: fixed;
-    top: 20%;
-    left: 35%;
-    width: 40%;
-    height: 50%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+<style scoped>
+.category-management {
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-.category-modal-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 4px;
-    width: 95%;
-    height: 95%;
+.box-card {
+    margin-bottom: 20px;
+}
+
+.el-table {
+    margin-top: 20px;
+}
+
+.dialog-footer button:first-child {
+    margin-right: 10px;
 }
 </style>
