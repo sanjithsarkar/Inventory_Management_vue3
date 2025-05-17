@@ -37,6 +37,7 @@
                     </template>
                     <el-menu-item index="/product">List</el-menu-item>
                     <el-menu-item index="/product/create">Add New</el-menu-item>
+                    <el-menu-item index="/category">Category</el-menu-item>
                 </el-sub-menu>
                 <el-menu-item index="/settings">
                     <el-icon>

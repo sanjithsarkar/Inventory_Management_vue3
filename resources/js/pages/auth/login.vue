@@ -30,8 +30,16 @@ const loginUser = async () => {
             ElMessage.error(response.data.message || 'Login failed')
         }
     } catch (error) {
-        const errorMessage = error.response?.data?.message || 'An error occurred during login'
-        ElMessage.error(errorMessage)
+        if (error.response.data.message) {
+            const errorMessages = Object.values(error.response.data.message).flat()
+            errorMessages.forEach((message, index) => {
+                setTimeout(() => {
+                    ElMessage.error(message)
+                }, index * 100) // 100ms delay between messages
+            })
+        } else {
+            ElMessage.error(errorMessage)
+        }
     } finally {
         loading.value = false
     }
