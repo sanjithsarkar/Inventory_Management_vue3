@@ -92,6 +92,7 @@
                         <input type="hidden" v-model="data.totalAmount" />
                         <input type="hidden" v-model="data.paymentReceive" />
                         <input type="hidden" v-model="data.duePayment" />
+                        <input type="hidden" v-model="data.price" />
                         <el-descriptions-item label="Payment Method">
                             <el-select v-model="data.payby" placeholder="Select Payment Method">
                                 <el-option label="Hand Cash" value="HandCash" />
@@ -204,7 +205,8 @@ const data = ref({
     paymentReceive: 0,
     duePayment: 0,
     customer_id: null,
-    payby: 'HandCash'
+    payby: 'HandCash',
+    price: 0
 });
 
 // Computed properties
@@ -400,6 +402,7 @@ watchEffect(() => {
     data.value.totalAmount = totalAmount.value;
     data.value.paymentReceive = paymentReceive.value;
     data.value.duePayment = formatCurrency(remainingPayment.value);
+    data.value.price = productData.value.price;
 });
 
 

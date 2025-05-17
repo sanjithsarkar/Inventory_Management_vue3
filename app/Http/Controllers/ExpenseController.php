@@ -70,4 +70,10 @@ class ExpenseController extends Controller
         $expense = Expense::where('date', $date)->sum('amount');
         return response()->json($expense);
     }
+
+    public function yesterdayExpense () {
+        $yesterday = date('d/m/Y', strtotime('-1 day'));
+        $expense = Expense::where('date', $yesterday)->sum('amount');
+        return response()->json($expense);
+    }
 }

@@ -93,8 +93,7 @@
                             <el-descriptions-item label="Name">{{ order[0].customer.name }}</el-descriptions-item>
                             <el-descriptions-item label="Email">{{ order[0].customer.email }}</el-descriptions-item>
                             <el-descriptions-item label="Phone">{{ order[0].customer.phone }}</el-descriptions-item>
-                            <el-descriptions-item label="Address">{{ order[0].customer.address
-                            }}</el-descriptions-item>
+                            <el-descriptions-item label="Address">{{ order[0].customer.address }}</el-descriptions-item>
                         </el-descriptions>
                         <el-empty image-size="56" v-else description="No customer data" />
                     </el-card>
@@ -108,10 +107,12 @@
                         </template>
                         <el-descriptions border :column="1">
                             <el-descriptions-item label="Product Id">{{ orderProduct[0]?.pro_id
-                            }}</el-descriptions-item>
-                            <el-descriptions-item label="Product Name">{{ orderProduct[0]?.name }}</el-descriptions-item>
-                            <el-descriptions-item label="quantity">{{ orderProduct[0]?.quantity }}</el-descriptions-item>
-                            <el-descriptions-item label="price">{{ formatCurrency(orderProduct?.price) }}</el-descriptions-item>
+                                }}</el-descriptions-item>
+                            <el-descriptions-item label="Product Name">{{ orderProduct[0]?.name
+                                }}</el-descriptions-item>
+                            <el-descriptions-item label="quantity">{{ orderProduct[0]?.quantity
+                                }}</el-descriptions-item>
+                            <el-descriptions-item label="price">{{ formatCurrency(orderProduct[0]?.price) }}</el-descriptions-item>
                         </el-descriptions>
                     </el-card>
                 </el-col>
@@ -217,7 +218,6 @@ const getOrders = async (page = 1) => {
 
 const showModal = async (orderId) => {
     try {
-        console.log(`Fetching order details for ID: ${orderId}`)
         loading.value = true
 
         const [orderRes, productsRes] = await Promise.all([

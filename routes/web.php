@@ -23,10 +23,13 @@ Route::get('/', function () {
 //     return view('index');
 // })->where('vue_capture', '[\/\w\.-]*');
 
-Route::get('/{any}', function () {
-    return view('index');
-})->where('any', '.*');
+// Route::get('/{any}', function () {
+//     return view('index');
+// })->where('any', '.*');
 
+Route::get('/{any}', function () {
+    return view('index2'); // This should be your Vue entry point
+})->where('any', '.*')->name('spa');
 // Route::post('/stripe/payment', [PosController::class, 'payment'])->name('stripe.payment');
 // Route::get('stripe/success', [PosController::class, 'success'])->name('stripe.success');
 // Route::get('stripe/cancel', [PosController::class, 'cancel'])->name('stripe.cancel');

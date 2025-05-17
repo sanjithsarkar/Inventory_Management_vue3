@@ -17,6 +17,7 @@
         "vue": "^3.2.37"
     },
     "dependencies": {
+        "@iconify/vue": "^5.0.0",
         "@stripe/stripe-js": "^3.5.0",
         "admin-lte": "3.2",
         "date-fns": "^2.25.0",

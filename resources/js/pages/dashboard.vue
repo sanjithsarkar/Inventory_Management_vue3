@@ -1,5 +1,4 @@
 
-```vue
 <template>
   <div class="dashboard-container">
     <h2>Today's Financial Summary</h2>
@@ -412,7 +411,3 @@ onMounted(() => {
   }
 }
 </style>
-```
----
-
-Let me know if you'd like me to help further— e.g., add loading states, error displays, or dynamic yesterday data fetching!

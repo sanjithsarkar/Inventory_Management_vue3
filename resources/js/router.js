@@ -1,6 +1,5 @@
 import { createWebHashHistory, createRouter } from 'vue-router';
 
-import Home from './pages/home.vue';
 import login from './pages/auth/login.vue';
 import register from './pages/auth/register.vue';
 import dashboard from './pages/dashboard.vue';
@@ -16,7 +15,7 @@ import customerEdit from './pages/customer/edit.vue';
 import categoryIndex from './pages/product/category/index.vue';
 
 import productIndex from './pages/product/index.vue';
-import productCreate from './pages/product/create.vue';
+import productCreate from './pages/product/create1.vue';
 import productEdit from './pages/product/edit.vue';
 
 import pos from './pages/pos/pos.vue';

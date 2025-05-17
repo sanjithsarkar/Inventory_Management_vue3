@@ -112,6 +112,7 @@ class CartController extends Controller
             'order_number' => generateUniqueNumber(),
             'customer_id' => $request->customer_id,
             'quantity' => $request->quantity,
+            'price' => $request->price,
             'subTotal' => $request->subTotal,
             'discount' => $request->discount,
             'discount_payment' => $request->discountPayment,
