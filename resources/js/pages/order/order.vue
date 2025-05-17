@@ -55,7 +55,7 @@
                 </template>
             </el-table-column>
             <el-table-column prop="date" label="Date" sortable />
-            <el-table-column label="Actions" width="180">
+            <el-table-column label="Actions" width="250">
                 <template #default="{ row }">
                     <el-button @click="showModal(row.id)" type="primary" plain size="small">
                         <el-icon>
@@ -68,6 +68,11 @@
                                 <Edit />
                             </el-icon> Edit
                         </router-link>
+                    </el-button>
+                    <el-button @click="printOrder(row.id)" type="success" plain size="small">
+                        <el-icon>
+                            <Printer />
+                        </el-icon> Print
                     </el-button>
                 </template>
             </el-table-column>
@@ -112,7 +117,8 @@
                                 }}</el-descriptions-item>
                             <el-descriptions-item label="quantity">{{ orderProduct[0]?.quantity
                                 }}</el-descriptions-item>
-                            <el-descriptions-item label="price">{{ formatCurrency(orderProduct[0]?.price) }}</el-descriptions-item>
+                            <el-descriptions-item label="price">{{ formatCurrency(orderProduct[0]?.price)
+                            }}</el-descriptions-item>
                         </el-descriptions>
                     </el-card>
                 </el-col>
@@ -137,29 +143,134 @@
                 </el-table>
             </el-card>
             <template #footer>
-                <el-button @click="handleDialogClose" type="danger">Close</el-button>
+                <div class="dialog-footer">
+                    <el-button @click="printOrderDetails" type="primary">
+                        <el-icon>
+                            <Printer />
+                        </el-icon> Print Details
+                    </el-button>
+                    <el-button @click="handleDialogClose" type="danger">Close</el-button>
+                </div>
             </template>
         </el-dialog>
+
+        <div id="printable-order" class="printable-content">
+            <div v-if="printableOrder" class="modern-invoice">
+                <!-- Invoice Header -->
+                <header class="invoice-header">
+                    <div class="company-info">
+                        <h1 class="company-name">Your Business Name</h1>
+                        <p class="company-details">
+                            123 Business Street, City, State<br>
+                            Phone: (123) 456-7890 | Email: info@yourbusiness.com<br>
+                            www.yourbusiness.com
+                        </p>
+                    </div>
+                    <div class="invoice-title">
+                        <h2>INVOICE</h2>
+                        <div class="invoice-meta">
+                            <p><strong>Order #:</strong> {{ printableOrder.order_number }}</p>
+                            <p><strong>Date:</strong> {{ printableOrder.date }}</p>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Customer Information -->
+                <section class="customer-section" v-if="printableOrder.customer">
+                    <div class="section-title">BILL TO</div>
+                    <div class="customer-details">
+                        <p class="customer-name">{{ printableOrder.customer.name }}</p>
+                        <p>{{ printableOrder.customer.email }}</p>
+                        <p>{{ printableOrder.customer.phone }}</p>
+                        <p>{{ printableOrder.customer.address }}</p>
+                    </div>
+                </section>
+
+                <!-- Order Products -->
+                <section class="products-section" v-if="printableProducts.length">
+                    <div class="section-title">ORDER ITEMS</div>
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th class="text-left">ITEM</th>
+                                <th class="text-center">SKU</th>
+                                <th class="text-center">QTY</th>
+                                <th class="text-right">UNIT PRICE</th>
+                                <th class="text-right">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="product in printableProducts" :key="product.id">
+                                <td class="text-left">{{ product.name }}</td>
+                                <td class="text-center">{{ product.pro_id }}</td>
+                                <td class="text-center">{{ product.quantity }}</td>
+                                <td class="text-right">{{ formatCurrency(product.price) }}</td>
+                                <td class="text-right">{{ formatCurrency(product.price * product.quantity) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <!-- Order Summary -->
+                <section class="summary-section">
+                    <div class="summary-grid">
+                        <div class="summary-label">Subtotal:</div>
+                        <div class="summary-value">{{ formatCurrency(printableOrder.subTotal) }}</div>
+
+                        <div class="summary-label">Discount ({{ printableOrder.discount }}%):</div>
+                        <div class="summary-value discount">-{{ formatCurrency(printableOrder.subTotal *
+                            (printableOrder.discount/100)) }}</div>
+
+                        <div class="summary-label">Tax:</div>
+                        <div class="summary-value">{{ formatCurrency(printableOrder.total - printableOrder.subTotal +
+                            (printableOrder.subTotal * (printableOrder.discount/100))) }}</div>
+
+                        <div class="summary-label grand-total">Total:</div>
+                        <div class="summary-value grand-total">{{ formatCurrency(printableOrder.total) }}</div>
+
+                        <div class="summary-label">Amount Paid:</div>
+                        <div class="summary-value">{{ formatCurrency(printableOrder.paid) }}</div>
+
+                        <div class="summary-label">Balance Due:</div>
+                        <div class="summary-value">{{ formatCurrency(printableOrder.due) }}</div>
+                    </div>
+
+                    <div class="payment-method">
+                        <p><strong>Payment Method:</strong> {{ printableOrder.payby }}</p>
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <!-- <footer class="invoice-footer">
+      <p>Thank you for your business!</p>
+      <p class="terms">Payment terms: Net 30 days. Late payments subject to 1.5% monthly interest.</p>
+    </footer> -->
+            </div>
+        </div>
+
+
     </el-card>
 </template>
 
 <script setup>
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import axios from 'axios'
-import { Search, View, Edit } from '@element-plus/icons-vue'
+import { Search, View, Edit, Printer } from '@element-plus/icons-vue'
 
 
 const startDate = ref('')
 const endDate = ref('')
 const searchQuery = ref('')
 const orderData = ref([])
-const order = ref({})
+const order = ref([])
 const orderProduct = ref([])
 const isModalVisible = ref(false)
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const timeout = ref(null)
+const printableOrder = ref(null)
+const printableProducts = ref([])
 
 const pagination = ref({
     current_page: 1,
@@ -225,8 +336,10 @@ const showModal = async (orderId) => {
             axios.get(`/api/order/product/${orderId}`)
         ])
 
-        order.value = orderRes.data
-        orderProduct.value = productsRes.data
+        // Make sure we're handling the response data correctly
+        order.value = Array.isArray(orderRes.data) ? orderRes.data : [orderRes.data]
+        orderProduct.value = Array.isArray(productsRes.data) ? productsRes.data : [productsRes.data]
+
         console.log('Order:', order.value)
         isModalVisible.value = true
     } catch (error) {
@@ -235,11 +348,14 @@ const showModal = async (orderId) => {
         loading.value = false
     }
 }
+
 const handleDialogClose = () => {
     isModalVisible.value = false
-    order.value = {}
+    // Reset to empty arrays instead of empty objects
+    order.value = []
     orderProduct.value = []
 }
+
 const handleSizeChange = (val) => {
     pageSize.value = val
     getOrders(1) // reset to page 1
@@ -254,6 +370,169 @@ const formatCurrency = (value) => {
         style: 'currency',
         currency: 'USD'
     }).format(value || 0)
+}
+
+const printOrder = async (orderId) => {
+    try {
+        loading.value = true
+
+        // Fetch order and product data
+        const [orderRes, productsRes] = await Promise.all([
+            axios.get(`/api/order/${orderId}`),
+            axios.get(`/api/order/product/${orderId}`)
+        ])
+
+        // Make sure we're handling the response data correctly
+        const orderData = Array.isArray(orderRes.data) ? orderRes.data[0] : orderRes.data
+        const productData = Array.isArray(productsRes.data) ? productsRes.data : [productsRes.data]
+
+        printableOrder.value = orderData
+        printableProducts.value = productData
+
+        // Wait for data to be set
+        setTimeout(() => {
+            // Create a new window for printing
+            const printWindow = window.open('', '_blank')
+
+            // Get the printable content
+            const printableContent = document.getElementById('printable-order').innerHTML
+
+            // Write the content to the new window
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Order #${printableOrder.value.order_number}</title>
+                    <style>
+                        .modern-invoice { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; color: #333; line-height: 1.5; }
+
+                        .invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #3a7bd5; }
+
+                        .company-name { color: #3a7bd5; margin: 0 0 10px 0; font-size: 24px; }
+
+                        .company-details { color: #666; margin: 0; font-size: 14px; }
+
+                        .invoice-title h2 { color: #3a7bd5; margin: 0 0 10px 0; text-align: right; font-size: 24px; }
+                        
+                        .invoice-meta p { margin: 0; padding: 3px 0; }
+
+                        .invoice-meta { text-align: right; font-size: 14px; }
+
+                        .section-title { font-size: 14px; font-weight: bold; color: #4a6baf; margin-bottom: 10px; border-bottom: 1px solid #eee; border-left: 3px solid #3a7bd5; padding: 8px 12px; }
+
+                        .customer-details p { margin: 0; padding: 3px; }
+
+                        .customer-section { margin-bottom: 30px; }
+
+                        .customer-name { font-weight: bold; margin-bottom: 5px; }
+
+                        .products-table { width: 100%; border-collapse: collapse; margin: 15px 0 30px 0; }
+
+                        .products-table th { background-color: #f5f7fa; padding: 10px; font-weight: bold; font-size: 14px; }
+
+                        .products-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+
+                        .text-left { text-align: left; }
+                        .text-center { text-align: center; }
+                        .text-right { text-align: right; }
+
+                        .summary-section { margin-left: auto; width: 300px; margin-bottom: 30px; font-size: 14px; }
+
+                        .summary-grid { display: grid; grid-template-columns: auto auto; gap: 10px; margin-bottom: 15px; }
+
+                        .summary-label { text-align: right; font-weight: 500; }
+
+                        .summary-value { text-align: right; }
+
+                        .discount { color: #f56c6c; }
+
+                        .grand-total { font-weight: bold; font-size: 1.1em; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px; }
+
+                        .payment-method { text-align: right; font-size: 14px; }
+
+                        .invoice-footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #3a7bd5; color: #666; font-size: 14px; }
+
+                        .terms { font-size: 12px; margin-top: 10px; }
+
+                    </style>
+                </head>
+                <body>
+                    ${printableContent}
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button onclick="window.print()">Print</button>
+                    </div>
+                </body>
+                </html>
+            `)
+
+            // Close the document
+            printWindow.document.close()
+
+            // Focus on the new window
+            printWindow.focus()
+        }, 500)
+    } catch (error) {
+        console.error('Error preparing order for print:', error)
+    } finally {
+        loading.value = false
+    }
+}
+
+const printOrderDetails = () => {
+    // Use the current modal data for printing
+    const orderData = order.value.length > 0 ? order.value[0] : {}
+    const productData = orderProduct.value
+
+    printableOrder.value = orderData
+    printableProducts.value = productData
+
+    // Wait for data to be set
+    setTimeout(() => {
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank')
+
+        // Get the printable content
+        const printableContent = document.getElementById('printable-order').innerHTML
+
+        // Write the content to the new window
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Order #${printableOrder.value.order_number || 'Details'}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .print-header { text-align: center; margin-bottom: 20px; }
+                    .print-customer { margin-bottom: 20px; }
+                    .print-products { margin-bottom: 20px; }
+                    .print-summary { margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    @media print {
+                        button { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                ${printableContent}
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="window.print()">Print</button>
+                </div>
+            </body>
+            </html>
+        `)
+
+        // Close the document
+        printWindow.document.close()
+
+        // Focus on the new window
+        printWindow.focus()
+    }, 500)
+}
+
+// Function to handle sorting
+const handleSortChange = ({ prop, order }) => {
+    // Implement sorting logic here if needed
+    console.log('Sort changed:', prop, order)
 }
 
 onMounted(() => getOrders())
@@ -288,5 +567,164 @@ onMounted(() => getOrders())
 
 .mt-4 {
     margin-top: 1rem;
+}
+
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.print-header {
+    padding: 20px 0;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.store-info {
+    flex: 1;
+    padding-right: 20px;
+}
+
+.store-brand {
+    margin-bottom: 15px;
+}
+
+.store-name {
+    color: #409EFF;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 5px 0;
+    letter-spacing: 0.5px;
+}
+
+.store-tagline {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.store-contact {
+    margin-top: 15px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    color: #555;
+    font-size: 14px;
+}
+
+.contact-item .el-icon {
+    margin-right: 10px;
+    color: #409EFF;
+    font-size: 16px;
+}
+
+.invoice-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.invoice-card {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-left: 4px solid #409EFF;
+    align-self: flex-end;
+}
+
+.invoice-title {
+    color: #409EFF;
+    font-size: 24px;
+    margin: 0 0 10px 0;
+    text-align: right;
+}
+
+.invoice-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.meta-label {
+    font-weight: 500;
+    color: #666;
+}
+
+.meta-value {
+    font-weight: 600;
+    color: #333;
+}
+
+.customer-card {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border-left: 4px solid #67C23A;
+}
+
+.section-title {
+    color: #67C23A;
+    font-size: 16px;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.customer-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.detail-row {
+    display: flex;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #666;
+    min-width: 80px;
+}
+
+.detail-value {
+    font-weight: 500;
+    color: #333;
+}
+
+@media print {
+    .print-header {
+        padding-top: 0;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .store-name {
+        color: #0066cc !important;
+    }
+
+    .invoice-card,
+    .customer-card {
+        background: none !important;
+        border-left: 4px solid #0066cc !important;
+    }
+
+    .invoice-title {
+        color: #0066cc !important;
+    }
 }
 </style>
