@@ -42,7 +42,7 @@
                 <el-sub-menu index="3">
                     <template #title>
                         <el-icon>
-                            <Shop />
+                            <User />
                         </el-icon>
                         <span>Customers</span>
                     </template>
@@ -58,6 +58,18 @@
                     </template>
                     <el-menu-item index="/supplier">List</el-menu-item>
                     <el-menu-item index="/supplier/create">Add New</el-menu-item>
+                </el-sub-menu>
+                <el-sub-menu index="5">
+                    <template #title>
+                        <el-icon>
+                            <Money />
+                        </el-icon>
+                        <span>Expenses</span>
+                    </template>
+                    <el-menu-item index="/expense">List</el-menu-item>
+                    <el-menu-item index="/expense/create">Add New</el-menu-item>
+                    <el-menu-item index="/expense-category">Category</el-menu-item>
+                    <el-menu-item index="/expense-method">Method</el-menu-item>
                 </el-sub-menu>
                 <el-menu-item index="/settings">
                     <el-icon>
@@ -129,7 +141,9 @@ import {
     Fold,
     Goods,
     Iphone,
-    Shop
+    Shop,
+    Money,
+    User
 } from '@element-plus/icons-vue';
 
 const route = useRoute();

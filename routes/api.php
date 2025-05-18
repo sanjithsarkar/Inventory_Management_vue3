@@ -66,4 +66,11 @@ Route::get('/yesterday/income', 'App\Http\controllers\OrderController@yesterdayI
 Route::get('/yesterday/due', 'App\Http\controllers\OrderController@yesterdayDue');
 Route::get('/yesterday/expense', 'App\Http\controllers\ExpenseController@yesterdayExpense');
 Route::APIResource('/suppliers', 'App\Http\controllers\SupplierController');
+Route::APIResource('/expense-categories', 'App\Http\controllers\ExpenseCategoryController');
+Route::APIResource('/expense-methods', 'App\Http\controllers\ExpenseMethodController');
+// Expense routes - not protected by auth middleware
+Route::get('/today/expense', 'App\Http\Controllers\ExpenseController@todayExpense');
+Route::get('/yesterday/expense', 'App\Http\Controllers\ExpenseController@yesterdayExpense');
+Route::get('/monthly/expense', 'App\Http\Controllers\ExpenseController@monthlyExpense');
+Route::apiResource('/expenses', 'App\Http\Controllers\ExpenseController');
 

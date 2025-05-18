@@ -67,6 +67,37 @@ const routes = [
     component: () => import('./pages/supplier/edit.vue'),
     meta: { requiresAuth: true }
   },
+  // Expense routes
+  {
+    path: '/expense',
+    name: 'expense',
+    component: () => import('./pages/expense/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/expense/create',
+    name: 'expense.create',
+    component: () => import('./pages/expense/create.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/expense/edit/:id',
+    name: 'expense.edit',
+    component: () => import('./pages/expense/edit.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/expense-category',
+    name: 'expense-category',
+    component: () => import('./pages/expense/category.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/expense-method',
+    name: 'expense-method',
+    component: () => import('./pages/expense/method.vue'),
+    meta: { requiresAuth: true }
+  }
   
 ]
 
