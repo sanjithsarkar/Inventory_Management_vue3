@@ -89,16 +89,16 @@
                                 <span class="summary-value">{{ totalQuantity }}</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="Sub Total">
-                                <span class="summary-value">{{ totalSubTotal }}</span>
+                                <span class="summary-value">{{ formatCurrency(totalSubTotal) }}</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="Discount (%)">
                                 <div class="discount-control">
                                     <el-input-number v-model="discount" :min="0" :max="100" size="default" controls-position="right" />
-                                    <span class="discount-amount">({{ discountPayment }})</span>
+                                    <span class="discount-amount">({{ formatCurrency(discountPayment) }})</span>
                                 </div>
                             </el-descriptions-item>
                             <el-descriptions-item label="Total Amount">
-                                <span class="summary-value total-amount">{{ totalAmount }}</span>
+                                <span class="summary-value total-amount">{{ formatCurrency(totalAmount) }}</span>
                             </el-descriptions-item>
                         </el-descriptions>
                     </div>
@@ -133,15 +133,15 @@
                                 </el-descriptions-item>
                                 <el-descriptions-item label="Payment Amount">
                                     <div class="payment-amount-container">
-                                        <el-input 
+                                        <el-input
                                             v-model="paymentReceive" 
                                             :min="0" 
                                             :max="totalAmount" 
                                             :precision="2"
+                                            :step="0.01"
                                             placeholder="Enter payment amount"
-                                        >
-                                            <template #prefix>$</template>
-                                        </el-input>
+                                            style="width: 100%"
+                                        />
                                         <el-button 
                                             type="primary" 
                                             size="small" 
@@ -417,7 +417,29 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useCurrency } from '../../composables/useCurrency';
 
 const toastr = useToastr();
-const { formatCurrency } = useCurrency();
+const { formatCurrency, formatAmount } = useCurrency();
+
+// Fallback formatting functions in case the imported ones aren't working
+const fallbackFormatAmount = (amount) => {
+    console.log('Using fallback formatAmount');
+  if (amount === null || amount === undefined) {
+    amount = 0;
+  }
+  
+  if (typeof amount === 'string') {
+    amount = parseFloat(amount.replace(/[^0-9.-]+/g, ''));
+  }
+  
+  if (isNaN(amount)) {
+    amount = 0;
+  }
+  
+  return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+};
+
+const fallbackFormatCurrency = (amount) => {
+  return '$' + fallbackFormatAmount(amount);
+};
 
 // Data properties
 const posData = ref([]);
@@ -522,26 +544,65 @@ const addCustomer = async () => {
     }
 };
 
-// Computed properties
+// Computed properties for calculations (using raw numbers)
 const totalQuantity = computed(() => {
-    return formatCurrency(posData.value.reduce((sum, item) => sum + parseFloat(item.quantity), 0));
+    return posData.value.reduce((sum, item) => sum + parseFloat(item.quantity), 0);
 });
 
 const totalSubTotal = computed(() => {
-    return formatCurrency(posData.value.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.price)), 0));
+    return formatAmount(posData.value.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.price)), 0));
 });
 
 const discountPayment = computed(() => {
-    return formatCurrency(totalSubTotal.value * discount.value / 100);
+    return formatAmount(totalSubTotal.value * discount.value / 100);
 });
 
 const totalAmount = computed(() => {
-    return formatCurrency(totalSubTotal.value - discountPayment.value);
+    return formatAmount(totalSubTotal.value - discountPayment.value);
 });
 
 const remainingPayment = computed(() => {
-    return formatCurrency(paymentReceive.value ? totalAmount.value - parseFloat(paymentReceive.value) : totalAmount.value);
+    const remaining = paymentReceive.value ? totalAmount.value - parseFloat(paymentReceive.value) : totalAmount.value;
+    return formatAmount(remaining);
 });
+
+// Computed properties for display (using formatted strings)
+
+// const formattedTotalSubTotal = computed(() => {
+//   try {
+//     return formatCurrency(totalSubTotal.value);
+//   } catch (error) {
+//     console.warn('Using fallback formatter for currency');
+//     return fallbackFormatCurrency(totalSubTotal.value);
+//   }
+// });
+
+// const formattedDiscountPayment = computed(() => {
+//   try {
+//     return formatCurrency(discountPayment.value);
+//   } catch (error) {
+//     console.warn('Using fallback formatter for currency');
+//     return fallbackFormatCurrency(discountPayment.value);
+//   }
+// });
+
+// const formattedTotalAmount = computed(() => {
+//   try {
+//     return formatCurrency(totalAmount.value);
+//   } catch (error) {
+//     console.warn('Using fallback formatter for currency');
+//     return fallbackFormatCurrency(totalAmount.value);
+//   }
+// });
+
+// const formattedRemainingPayment = computed(() => {
+//   try {
+//     return formatCurrency(remainingPayment.value);
+//   } catch (error) {
+//     console.warn('Using fallback formatter for currency');
+//     return fallbackFormatCurrency(remainingPayment.value);
+//   }
+// });
 
 // Methods
 const getCategories = async () => {
