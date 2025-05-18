@@ -227,6 +227,7 @@ const saveSettings = async () => {
             saving.value = true;
             await axios.post('/api/settings/currency', form);
             ElMessage.success('Currency settings saved successfully');
+            refreshPage();
         } catch (error) {
             console.error('Failed to save settings:', error);
             ElMessage.error('Failed to save currency settings');
@@ -234,6 +235,12 @@ const saveSettings = async () => {
             saving.value = false;
         }
     });
+};
+
+const refreshPage = () => {
+    setTimeout(() => {
+        window.location.reload();
+    }, 1000);
 };
 
 onMounted(async () => {
