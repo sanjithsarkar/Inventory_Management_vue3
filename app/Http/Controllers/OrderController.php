@@ -34,12 +34,12 @@ class OrderController extends Controller
                 });
             })
             ->when(!empty($startDate), function ($query) use ($startDate, $endDate) {
-                $start = date('Y-m-d 00:00:00', strtotime($startDate));
+                $start = Carbon::parse($startDate)->format('Y/m/d');
                 if (!empty($endDate)) {
-                    $end = date('Y-m-d 23:59:59', strtotime($endDate));
-                    $query->whereBetween('created_at', [$start, $end]);
+                    $end = Carbon::parse($endDate)->format('Y/m/d');
+                    $query->whereBetween('date', [$start, $end]);
                 } else {
-                    $query->whereBetween('created_at', [$start, Carbon::now()]);
+                    $query->whereDate('date', $start);
                 }
             })
             ->with('customer')

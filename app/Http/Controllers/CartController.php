@@ -120,7 +120,7 @@ class CartController extends Controller
             'paid' => $request->paymentReceive,
             'due' => $request->duePayment,
             'payby' => $request->payby,
-            'date' => date('d/m/Y'),
+            'date' => Carbon::now()->format('Y/m/d'),
             'month' => date('F'),
             'year' => date('Y'),
         ]);
