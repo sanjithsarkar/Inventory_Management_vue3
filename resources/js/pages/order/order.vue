@@ -159,7 +159,7 @@
                 <!-- Invoice Header -->
                 <header class="invoice-header">
                     <div class="company-info">
-                        <h1 class="company-name">Your Business Name</h1>
+                        <h1 class="company-name">BuyBuddy</h1>
                         <p class="company-details">
                             123 Business Street, City, State<br>
                             Phone: (123) 456-7890 | Email: info@yourbusiness.com<br>
@@ -180,9 +180,9 @@
                     <div class="section-title">BILL TO</div>
                     <div class="customer-details">
                         <p class="customer-name">{{ printableOrder.customer.name }}</p>
-                        <p>{{ printableOrder.customer.email }}</p>
-                        <p>{{ printableOrder.customer.phone }}</p>
-                        <p>{{ printableOrder.customer.address }}</p>
+                        <p v-if="printableOrder.customer.email" >{{ printableOrder.customer.email }}</p>
+                        <p v-if="printableOrder.customer.phone">{{ printableOrder.customer.phone }}</p>
+                        <p v-if="printableOrder.customer.address">{{ printableOrder.customer.address }}</p>
                     </div>
                 </section>
 
