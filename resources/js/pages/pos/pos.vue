@@ -1020,4 +1020,9 @@ const selectedCustomer = computed(() => {
     justify-content: flex-end;
     gap: 10px;
 }
+
+/* Fix the deep selector syntax */
+:deep(.el-empty__image) {
+    height: 75px !important;
+}
 </style>
