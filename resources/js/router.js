@@ -19,7 +19,7 @@ import productCreate from './pages/product/create1.vue';
 import productEdit from './pages/product/edit.vue';
 
 import pos from './pages/pos/pos.vue';
-import order from './pages/order/order.vue';
+import order from './pages/order/orderPrintByModal.vue';
 import invoice from './pages/invoice/invoice.vue';
 
 const routes = [
