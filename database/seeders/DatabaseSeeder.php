@@ -4,6 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
+use App\Models\ExpenseMethod;
 use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\Product;
@@ -44,5 +47,14 @@ class DatabaseSeeder extends Seeder
                 'order_id' => $order->id
             ]);
         });
+        
+        // Create expense categories
+        ExpenseCategory::factory(10)->create();
+        
+        // Create expense payment methods
+        ExpenseMethod::factory(5)->create();
+        
+        // Create expenses
+        Expense::factory(100)->create();
     }
 }
