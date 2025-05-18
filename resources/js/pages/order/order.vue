@@ -386,90 +386,145 @@ const printOrder = async (orderId) => {
         const orderData = Array.isArray(orderRes.data) ? orderRes.data[0] : orderRes.data
         const productData = Array.isArray(productsRes.data) ? productsRes.data : [productsRes.data]
 
-        printableOrder.value = orderData
-        printableProducts.value = productData
+        // Create a new window for printing
+        const printWindow = window.open('', '_blank')
+        
+        // Write the content directly to the new window
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Order #${orderData.order_number}</title>
+                <style>
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }
+                    .modern-invoice { max-width: 800px; margin: 0 auto; color: #333; line-height: 1.5; }
+                    .invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #3a7bd5; }
+                    .company-name { color: #3a7bd5; margin: 0 0 10px 0; font-size: 24px; }
+                    .company-details { color: #666; margin: 0; font-size: 14px; }
+                    .invoice-title h2 { color: #3a7bd5; margin: 0 0 10px 0; text-align: right; font-size: 24px; }
+                    .invoice-meta p { margin: 0; padding: 3px 0; }
+                    .invoice-meta { text-align: right; font-size: 14px; }
+                    .section-title { font-size: 14px; font-weight: bold; color: #4a6baf; margin-bottom: 10px; border-bottom: 1px solid #eee; border-left: 3px solid #3a7bd5; padding: 8px 12px; }
+                    .customer-details p { margin: 0; padding: 3px; }
+                    .customer-section { margin-bottom: 30px; }
+                    .customer-name { font-weight: bold; margin-bottom: 5px; }
+                    .products-table { width: 100%; border-collapse: collapse; margin: 15px 0 30px 0; }
+                    .products-table th { background-color: #f5f7fa; padding: 10px; font-weight: bold; font-size: 14px; }
+                    .products-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+                    .text-left { text-align: left; }
+                    .text-center { text-align: center; }
+                    .text-right { text-align: right; }
+                    .summary-section { margin-left: auto; width: 300px; margin-bottom: 30px; font-size: 14px; }
+                    .summary-grid { display: grid; grid-template-columns: auto auto; gap: 10px; margin-bottom: 15px; }
+                    .summary-label { text-align: right; font-weight: 500; }
+                    .summary-value { text-align: right; }
+                    .discount { color: #f56c6c; }
+                    .grand-total { font-weight: bold; font-size: 1.1em; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px; }
+                    .payment-method { text-align: right; font-size: 14px; }
+                    @media print {
+                        button { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="modern-invoice">
+                    <!-- Invoice Header -->
+                    <header class="invoice-header">
+                        <div class="company-info">
+                            <h1 class="company-name">BuyBuddy</h1>
+                            <p class="company-details">
+                                123 Business Street, City, State<br>
+                                Phone: (123) 456-7890 | Email: info@yourbusiness.com<br>
+                                www.yourbusiness.com
+                            </p>
+                        </div>
+                        <div class="invoice-title">
+                            <h2>INVOICE</h2>
+                            <div class="invoice-meta">
+                                <p><strong>Order: #</strong>${orderData.order_number}</p>
+                                <p><strong>Date:</strong> ${orderData.date}</p>
+                            </div>
+                        </div>
+                    </header>
 
-        // Wait for data to be set
-        setTimeout(() => {
-            // Create a new window for printing
-            const printWindow = window.open('', '_blank')
+                    <!-- Customer Information -->
+                    ${orderData.customer ? `
+                    <section class="customer-section">
+                        <div class="section-title">BILL TO</div>
+                        <div class="customer-details">
+                            <p class="customer-name">${orderData.customer.name}</p>
+                            <p>${orderData.customer.email || ''}</p>
+                            <p>${orderData.customer.phone || ''}</p>
+                            <p>${orderData.customer.address || ''}</p>
+                        </div>
+                    </section>
+                    ` : ''}
 
-            // Get the printable content
-            const printableContent = document.getElementById('printable-order').innerHTML
+                    <!-- Order Products -->
+                    <section class="products-section">
+                        <div class="section-title">ORDER ITEMS</div>
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">ITEM</th>
+                                    <th class="text-center">SKU</th>
+                                    <th class="text-center">QTY</th>
+                                    <th class="text-right">UNIT PRICE</th>
+                                    <th class="text-right">TOTAL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${productData.map(product => `
+                                <tr>
+                                    <td class="text-left">${product.name}</td>
+                                    <td class="text-center">${product.pro_id}</td>
+                                    <td class="text-center">${product.quantity}</td>
+                                    <td class="text-right">${formatCurrency(product.price)}</td>
+                                    <td class="text-right">${formatCurrency(product.price * product.quantity)}</td>
+                                </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </section>
 
-            // Write the content to the new window
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Order #${printableOrder.value.order_number}</title>
-                    <style>
-                        .modern-invoice { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; color: #333; line-height: 1.5; }
+                    <!-- Order Summary -->
+                    <section class="summary-section">
+                        <div class="summary-grid">
+                            <div class="summary-label">Subtotal:</div>
+                            <div class="summary-value">${formatCurrency(orderData.subTotal)}</div>
 
-                        .invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #3a7bd5; }
+                            <div class="summary-label">Discount (${orderData.discount}%):</div>
+                            <div class="summary-value discount">-${formatCurrency(orderData.subTotal * (orderData.discount/100))}</div>
 
-                        .company-name { color: #3a7bd5; margin: 0 0 10px 0; font-size: 24px; }
+                            <div class="summary-label">Tax:</div>
+                            <div class="summary-value">${formatCurrency(orderData.total - orderData.subTotal + (orderData.subTotal * (orderData.discount/100)))}</div>
 
-                        .company-details { color: #666; margin: 0; font-size: 14px; }
+                            <div class="summary-label grand-total">Total:</div>
+                            <div class="summary-value grand-total">${formatCurrency(orderData.total)}</div>
 
-                        .invoice-title h2 { color: #3a7bd5; margin: 0 0 10px 0; text-align: right; font-size: 24px; }
-                        
-                        .invoice-meta p { margin: 0; padding: 3px 0; }
+                            <div class="summary-label">Amount Paid:</div>
+                            <div class="summary-value">${formatCurrency(orderData.paid)}</div>
 
-                        .invoice-meta { text-align: right; font-size: 14px; }
+                            <div class="summary-label">Balance Due:</div>
+                            <div class="summary-value">${formatCurrency(orderData.due)}</div>
+                        </div>
 
-                        .section-title { font-size: 14px; font-weight: bold; color: #4a6baf; margin-bottom: 10px; border-bottom: 1px solid #eee; border-left: 3px solid #3a7bd5; padding: 8px 12px; }
-
-                        .customer-details p { margin: 0; padding: 3px; }
-
-                        .customer-section { margin-bottom: 30px; }
-
-                        .customer-name { font-weight: bold; margin-bottom: 5px; }
-
-                        .products-table { width: 100%; border-collapse: collapse; margin: 15px 0 30px 0; }
-
-                        .products-table th { background-color: #f5f7fa; padding: 10px; font-weight: bold; font-size: 14px; }
-
-                        .products-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
-
-                        .text-left { text-align: left; }
-                        .text-center { text-align: center; }
-                        .text-right { text-align: right; }
-
-                        .summary-section { margin-left: auto; width: 300px; margin-bottom: 30px; font-size: 14px; }
-
-                        .summary-grid { display: grid; grid-template-columns: auto auto; gap: 10px; margin-bottom: 15px; }
-
-                        .summary-label { text-align: right; font-weight: 500; }
-
-                        .summary-value { text-align: right; }
-
-                        .discount { color: #f56c6c; }
-
-                        .grand-total { font-weight: bold; font-size: 1.1em; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px; }
-
-                        .payment-method { text-align: right; font-size: 14px; }
-
-                        .invoice-footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #3a7bd5; color: #666; font-size: 14px; }
-
-                        .terms { font-size: 12px; margin-top: 10px; }
-
-                    </style>
-                </head>
-                <body>
-                    ${printableContent}
-                    <div style="text-align: center; margin-top: 30px;">
-                        <button onclick="window.print()">Print</button>
-                    </div>
-                </body>
-                </html>
-            `)
-
-            // Close the document
-            printWindow.document.close()
-
-            // Focus on the new window
-            printWindow.focus()
-        }, 500)
+                        <div class="payment-method">
+                            <p><strong>Payment Method:</strong> ${orderData.payby}</p>
+                        </div>
+                    </section>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <button onclick="window.print()">Print</button>
+                </div>
+            </body>
+            </html>
+        `)
+        
+        // Close the document
+        printWindow.document.close()
+        
+        // Focus on the new window
+        printWindow.focus()
     } catch (error) {
         console.error('Error preparing order for print:', error)
     } finally {
@@ -481,52 +536,146 @@ const printOrderDetails = () => {
     // Use the current modal data for printing
     const orderData = order.value.length > 0 ? order.value[0] : {}
     const productData = orderProduct.value
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank')
+    
+    // Write the content directly to the new window
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Order #${orderData.order_number || 'Details'}</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; }
+                .modern-invoice { max-width: 800px; margin: 0 auto; color: #333; line-height: 1.5; }
+                .invoice-header { display: flex; justify-content: space-between; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #3a7bd5; }
+                .company-name { color: #3a7bd5; margin: 0 0 10px 0; font-size: 24px; }
+                .company-details { color: #666; margin: 0; font-size: 14px; }
+                .invoice-title h2 { color: #3a7bd5; margin: 0 0 10px 0; text-align: right; font-size: 24px; }
+                .invoice-meta p { margin: 0; padding: 3px 0; }
+                .invoice-meta { text-align: right; font-size: 14px; }
+                .section-title { font-size: 14px; font-weight: bold; color: #4a6baf; margin-bottom: 10px; border-bottom: 1px solid #eee; border-left: 3px solid #3a7bd5; padding: 8px 12px; }
+                .customer-details p { margin: 0; padding: 3px; }
+                .customer-section { margin-bottom: 30px; }
+                .customer-name { font-weight: bold; margin-bottom: 5px; }
+                .products-table { width: 100%; border-collapse: collapse; margin: 15px 0 30px 0; }
+                .products-table th { background-color: #f5f7fa; padding: 10px; font-weight: bold; font-size: 14px; }
+                .products-table td { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+                .text-left { text-align: left; }
+                .text-center { text-align: center; }
+                .text-right { text-align: right; }
+                .summary-section { margin-left: auto; width: 300px; margin-bottom: 30px; font-size: 14px; }
+                .summary-grid { display: grid; grid-template-columns: auto auto; gap: 10px; margin-bottom: 15px; }
+                .summary-label { text-align: right; font-weight: 500; }
+                .summary-value { text-align: right; }
+                .discount { color: #f56c6c; }
+                .grand-total { font-weight: bold; font-size: 1.1em; border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px; }
+                .payment-method { text-align: right; font-size: 14px; }
+                @media print {
+                    button { display: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="modern-invoice">
+                <!-- Invoice Header -->
+                <header class="invoice-header">
+                    <div class="company-info">
+                        <h1 class="company-name">BuyBuddy</h1>
+                        <p class="company-details">
+                            123 Business Street, City, State<br>
+                            Phone: (123) 456-7890 | Email: info@yourbusiness.com<br>
+                            www.yourbusiness.com
+                        </p>
+                    </div>
+                    <div class="invoice-title">
+                        <h2>INVOICE</h2>
+                        <div class="invoice-meta">
+                            <p><strong>Order #:</strong> ${orderData.order_number || 'N/A'}</p>
+                            <p><strong>Date:</strong> ${orderData.date || 'N/A'}</p>
+                        </div>
+                    </div>
+                </header>
 
-    printableOrder.value = orderData
-    printableProducts.value = productData
+                <!-- Customer Information -->
+                ${orderData.customer ? `
+                <section class="customer-section">
+                    <div class="section-title">BILL TO</div>
+                    <div class="customer-details">
+                        <p class="customer-name">${orderData.customer.name}</p>
+                        <p>${orderData.customer.email || ''}</p>
+                        <p>${orderData.customer.phone || ''}</p>
+                        <p>${orderData.customer.address || ''}</p>
+                    </div>
+                </section>
+                ` : ''}
 
-    // Wait for data to be set
-    setTimeout(() => {
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank')
+                <!-- Order Products -->
+                <section class="products-section">
+                    <div class="section-title">ORDER ITEMS</div>
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th class="text-left">ITEM</th>
+                                <th class="text-center">SKU</th>
+                                <th class="text-center">QTY</th>
+                                <th class="text-right">UNIT PRICE</th>
+                                <th class="text-right">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productData.map(product => `
+                            <tr>
+                                <td class="text-left">${product.name}</td>
+                                <td class="text-center">${product.pro_id}</td>
+                                <td class="text-center">${product.quantity}</td>
+                                <td class="text-right">${formatCurrency(product.price)}</td>
+                                <td class="text-right">${formatCurrency(product.price * product.quantity)}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </section>
 
-        // Get the printable content
-        const printableContent = document.getElementById('printable-order').innerHTML
+                <!-- Order Summary -->
+                <section class="summary-section">
+                    <div class="summary-grid">
+                        <div class="summary-label">Subtotal:</div>
+                        <div class="summary-value">${formatCurrency(orderData.subTotal)}</div>
 
-        // Write the content to the new window
-        printWindow.document.write(`
-            <html>
-            <head>
-                <title>Order #${printableOrder.value.order_number || 'Details'}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    .print-header { text-align: center; margin-bottom: 20px; }
-                    .print-customer { margin-bottom: 20px; }
-                    .print-products { margin-bottom: 20px; }
-                    .print-summary { margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f2f2f2; }
-                    @media print {
-                        button { display: none; }
-                    }
-                </style>
-            </head>
-            <body>
-                ${printableContent}
-                <div style="text-align: center; margin-top: 30px;">
-                    <button onclick="window.print()">Print</button>
-                </div>
-            </body>
-            </html>
-        `)
+                        <div class="summary-label">Discount (${orderData.discount || 0}%):</div>
+                        <div class="summary-value discount">-${formatCurrency((orderData.subTotal || 0) * ((orderData.discount || 0)/100))}</div>
 
-        // Close the document
-        printWindow.document.close()
+                        <div class="summary-label">Tax:</div>
+                        <div class="summary-value">${formatCurrency((orderData.total || 0) - (orderData.subTotal || 0) + ((orderData.subTotal || 0) * ((orderData.discount || 0)/100)))}</div>
 
-        // Focus on the new window
-        printWindow.focus()
-    }, 500)
+                        <div class="summary-label grand-total">Total:</div>
+                        <div class="summary-value grand-total">${formatCurrency(orderData.total || 0)}</div>
+
+                        <div class="summary-label">Amount Paid:</div>
+                        <div class="summary-value">${formatCurrency(orderData.paid || 0)}</div>
+
+                        <div class="summary-label">Balance Due:</div>
+                        <div class="summary-value">${formatCurrency(orderData.due || 0)}</div>
+                    </div>
+
+                    <div class="payment-method">
+                        <p><strong>Payment Method:</strong> ${orderData.payby || 'N/A'}</p>
+                    </div>
+                </section>
+            </div>
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="window.print()">Print</button>
+            </div>
+        </body>
+        </html>
+    `)
+    
+    // Close the document
+    printWindow.document.close()
+    
+    // Focus on the new window
+    printWindow.focus()
 }
 
 // Function to handle sorting
