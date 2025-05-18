@@ -47,6 +47,26 @@ const routes = [
   { path: '/order', component: order, meta: { requiresAuth: true } },
 
   { path: '/invoice', component: invoice, meta: { requiresAuth: true } },
+
+  // Supplier routes
+  {
+    path: '/supplier',
+    name: 'supplier',
+    component: () => import('./pages/supplier/index.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/supplier/create',
+    name: 'supplier.create',
+    component: () => import('./pages/supplier/create.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/supplier/edit/:id',
+    name: 'supplier.edit',
+    component: () => import('./pages/supplier/edit.vue'),
+    meta: { requiresAuth: true }
+  },
   
 ]
 

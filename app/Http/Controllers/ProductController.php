@@ -45,7 +45,7 @@ class ProductController extends Controller
             ->when($searchCategory, function ($query) use ($searchCategory) {
                 $query->where('category_id', $searchCategory);
             })
-            ->with('category')
+            ->with(['category', 'supplier']) // Include supplier relationship
             ->latest()
             ->paginate(10);
 
@@ -159,8 +159,11 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $product)
+    public function show($id)
     {
+        $product = Product::with(['category', 'supplier'])->findOrFail($id);
+        $product->image_url = url('storage/' . $product->image);
+        
         return response()->json($product);
     }
 

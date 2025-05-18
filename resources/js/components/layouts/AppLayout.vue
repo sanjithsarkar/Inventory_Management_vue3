@@ -39,6 +39,16 @@
                     <el-menu-item index="/product/create">Add New</el-menu-item>
                     <el-menu-item index="/category">Category</el-menu-item>
                 </el-sub-menu>
+                <el-sub-menu index="3">
+                    <template #title>
+                        <el-icon>
+                            <Shop />
+                        </el-icon>
+                        <span>Suppliers</span>
+                    </template>
+                    <el-menu-item index="/supplier">List</el-menu-item>
+                    <el-menu-item index="/supplier/create">Add New</el-menu-item>
+                </el-sub-menu>
                 <el-menu-item index="/settings">
                     <el-icon>
                         <Setting />
@@ -108,7 +118,8 @@ import {
     Expand,
     Fold,
     Goods,
-    Iphone
+    Iphone,
+    Shop
 } from '@element-plus/icons-vue';
 
 const route = useRoute();

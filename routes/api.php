@@ -65,4 +65,5 @@ Route::get('/yesterday/sales', 'App\Http\controllers\OrderController@yesterdaySa
 Route::get('/yesterday/income', 'App\Http\controllers\OrderController@yesterdayIncome');
 Route::get('/yesterday/due', 'App\Http\controllers\OrderController@yesterdayDue');
 Route::get('/yesterday/expense', 'App\Http\controllers\ExpenseController@yesterdayExpense');
+Route::APIResource('/suppliers', 'App\Http\controllers\SupplierController');
 

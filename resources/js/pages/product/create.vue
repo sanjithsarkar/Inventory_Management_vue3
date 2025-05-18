@@ -158,6 +158,22 @@ const productInsert = async () => {
 
                 <div class="row">
                     <div class="col-md-6">
+                        <el-form-item label="Supplier" :error="errors.supplier_id?.[0]">
+                            <el-input v-model="form.supplier_id" placeholder="Enter supplier" type="number"
+                                min="0" clearable>
+                            </el-input>
+                        </el-form-item>
+                    </div>
+
+                    <div class="col-md-6">
+                        <el-form-item label="Product Code" :error="errors.code?.[0]">
+                            <el-input v-model="form.code" placeholder="Enter product code" clearable />
+                        </el-form-item>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
                         <el-form-item label="Quantity" :error="errors.quantity?.[0]">
                             <el-input v-model="form.quantity" placeholder="Enter quantity" type="number" min="0"
                                 clearable />

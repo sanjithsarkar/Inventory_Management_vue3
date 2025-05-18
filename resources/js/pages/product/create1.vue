@@ -14,16 +14,20 @@ const form = ref({
     selling_price: '',
     code: '',
     quantity: '',
+    supplier_id: '',
+    buying_date: '',
     image: null
 });
 
 const errors = ref({});
 const categoriesData = ref([]);
+const suppliersData = ref([]);
 const imageUrl = ref('');
 
-// Get categories on mount
+// Get categories and suppliers on mount
 onMounted(() => {
     getCategories();
+    getSuppliers();
 });
 
 const getCategories = async () => {
@@ -32,6 +36,15 @@ const getCategories = async () => {
         categoriesData.value = res.data;
     } catch (error) {
         console.error('Error fetching categories:', error);
+    }
+};
+
+const getSuppliers = async () => {
+    try {
+        const res = await axios.get('/api/suppliers');
+        suppliersData.value = res.data;
+    } catch (error) {
+        console.error('Error fetching suppliers:', error);
     }
 };
 
@@ -151,8 +164,29 @@ const handleRemoveImage = () => {
                 <el-row :gutter="24">
                     <el-col :span="12">
                         <el-form-item label="Quantity" :error="errors.quantity?.[0]">
-                            <el-input-number v-model="form.quantity" placeholder="Enter quantity" :min="0"
+                            <el-input v-model="form.quantity" placeholder="Enter quantity" :min="0"
                                 class="w-full" />
+                        </el-form-item>
+                    </el-col>
+
+                    <el-col :span="12">
+                        <el-form-item label="Supplier" :error="errors.supplier_id?.[0]">
+                            <el-select v-model="form.supplier_id" placeholder="Select supplier" class="w-full"
+                                clearable>
+                                <el-option v-for="supplier in suppliersData" :key="supplier.id" :label="supplier.name"
+                                    :value="supplier.id" />
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+
+
+                <el-row :gutter="24">
+                    <el-col :span="12">
+                        <el-form-item label="Buying Date" :error="errors.buying_date?.[0]">
+                            <el-input v-model="form.buying_date" placeholder="Enter buying date" type="date"
+                                min="0" step="0.01">
+                            </el-input>
                         </el-form-item>
                     </el-col>
 
