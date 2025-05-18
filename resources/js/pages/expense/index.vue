@@ -56,7 +56,7 @@
             </el-icon>
             <div>
               <div class="text-gray-500 text-sm">Today's Expense</div>
-              <div class="text-xl font-bold">${{ formatNumber(todayExpense) }}</div>
+              <div class="text-xl font-bold">{{ formatCurrencyValue(todayExpense) }}</div>
             </div>
           </div>
         </el-card>
@@ -69,7 +69,7 @@
             </el-icon>
             <div>
               <div class="text-gray-500 text-sm">Yesterday's Expense</div>
-              <div class="text-xl font-bold">${{ formatNumber(yesterdayExpense) }}</div>
+              <div class="text-xl font-bold">{{ formatCurrencyValue(yesterdayExpense) }}</div>
             </div>
           </div>
         </el-card>
@@ -82,7 +82,7 @@
             </el-icon>
             <div>
               <div class="text-gray-500 text-sm">This Month's Expense</div>
-              <div class="text-xl font-bold">${{ formatNumber(monthlyExpense) }}</div>
+              <div class="text-xl font-bold">{{ formatCurrencyValue(monthlyExpense) }}</div>
             </div>
           </div>
         </el-card>
@@ -102,7 +102,7 @@
         <el-table-column label="Description" prop="description" min-width="180" />
         <el-table-column label="Amount" min-width="100">
           <template #default="scope">
-            ${{ formatNumber(scope.row.amount) }}
+            {{ formatCurrencyValue(scope.row.amount) }}
           </template>
         </el-table-column>
         <el-table-column label="Date" prop="expense_date" min-width="100">
@@ -169,9 +169,11 @@ import axios from 'axios';
 import { ElMessageBox, ElMessage } from 'element-plus';
 import { Search, Plus, Edit, Delete, Money, Calendar, TrendCharts, Setting, Folder, CreditCard, ArrowDown } from '@element-plus/icons-vue';
 import { useToastr } from '../../Helper/toaster';
+import { useCurrency } from '../../composables/useCurrency';
 
 const router = useRouter();
 const toastr = useToastr();
+const { formatCurrency } = useCurrency();
 
 // Data
 const expenses = ref([]);
@@ -184,6 +186,17 @@ const totalExpenses = ref(0);
 const todayExpense = ref(0);
 const yesterdayExpense = ref(0);
 const monthlyExpense = ref(0);
+
+// Add a local formatCurrencyValue function as a fallback
+const formatCurrencyValue = (value) => {
+  // Try to use the global $formatCurrency if available, otherwise use the local formatCurrency
+  try {
+    return formatCurrency(value);
+  } catch (error) {
+    console.warn('Using fallback currency formatter');
+    return formatCurrency(value);
+  }
+};
 
 // Navigation methods
 const navigateToCreate = () => {
@@ -282,11 +295,6 @@ const deleteExpense = async (id) => {
     console.error('Error deleting expense:', error);
     toastr.error('Failed to delete expense');
   }
-};
-
-const formatNumber = (num) => {
-  if (num === null || num === undefined) return '0.00';
-  return parseFloat(num).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 };
 
 const formatDate = (dateString) => {

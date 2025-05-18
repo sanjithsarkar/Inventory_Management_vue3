@@ -71,12 +71,15 @@
                     <el-menu-item index="/expense-category">Category</el-menu-item>
                     <el-menu-item index="/expense-method">Method</el-menu-item>
                 </el-sub-menu>
-                <el-menu-item index="/settings">
-                    <el-icon>
-                        <Setting />
-                    </el-icon>
-                    <span>Settings</span>
-                </el-menu-item>
+                <el-sub-menu index="6">
+                    <template #title>
+                        <el-icon>
+                            <Setting />
+                        </el-icon>
+                        <span>Settings</span>
+                    </template>
+                    <el-menu-item index="/settings/currency">Currency</el-menu-item>
+                </el-sub-menu>
             </el-menu>
         </el-aside>
 
@@ -145,12 +148,14 @@ import {
     Money,
     User
 } from '@element-plus/icons-vue';
+import { loadCurrencySettings } from '../../utils/currency';
 
 const route = useRoute();
 const router = useRouter();
 const isCollapse = ref(false);
 const isDarkMode = ref(false);
 const isAuthenticated = ref(false);
+const currencyLoaded = ref(false);
 
 // Check authentication status whenever route changes
 watch(() => route.path, () => {
@@ -189,7 +194,7 @@ const handleLogout = () => {
     router.push('/');
 };
 
-onMounted(() => {
+onMounted(async () => {
     checkAuth();
 
     // Redirect to login if not authenticated
@@ -203,6 +208,11 @@ onMounted(() => {
             checkAuth();
         }
     });
+
+    // Load currency settings at the app layout level
+    await loadCurrencySettings();
+    currencyLoaded.value = true;
+    console.log('Currency settings loaded in AppLayout');
 });
 </script>
 

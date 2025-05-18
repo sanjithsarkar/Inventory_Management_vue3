@@ -11,6 +11,7 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\PayPalController;
+use App\Http\Controllers\SettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,4 +74,10 @@ Route::get('/today/expense', 'App\Http\Controllers\ExpenseController@todayExpens
 Route::get('/yesterday/expense', 'App\Http\Controllers\ExpenseController@yesterdayExpense');
 Route::get('/monthly/expense', 'App\Http\Controllers\ExpenseController@monthlyExpense');
 Route::apiResource('/expenses', 'App\Http\Controllers\ExpenseController');
+
+// Settings routes
+Route::get('/settings', [SettingsController::class, 'index']);
+Route::get('/settings/currency', [SettingsController::class, 'getCurrencySettings']);
+Route::post('/settings/currency', [SettingsController::class, 'updateCurrencySettings']);
+Route::get('/settings/currencies', [SettingsController::class, 'getAvailableCurrencies']);
 

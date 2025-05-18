@@ -97,6 +97,13 @@ const routes = [
     name: 'expense-method',
     component: () => import('./pages/expense/method.vue'),
     meta: { requiresAuth: true }
+  },
+  // Settings routes
+  {
+    path: '/settings/currency',
+    name: 'settings.currency',
+    component: () => import('./pages/settings/currency.vue'),
+    meta: { requiresAuth: true }
   }
   
 ]
