@@ -175,11 +175,102 @@
             </el-card>
         </el-col>
     </el-row>
+
+    <!-- Customer Dialog -->
+    <el-dialog
+        v-model="customerDialogVisible"
+        title="Add New Customer"
+        width="50%"
+        :close-on-click-modal="false"
+    >
+        <el-form 
+            :model="customerForm" 
+            label-position="top" 
+            @submit.prevent="addCustomer"
+            class="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+            <el-form-item label="Full Name" :error="customerErrors.name?.[0]">
+                <el-input v-model="customerForm.name" placeholder="Enter full name" />
+            </el-form-item>
+
+            <el-form-item label="Email" :error="customerErrors.email?.[0]">
+                <el-input v-model="customerForm.email" placeholder="Enter email address" type="email" />
+            </el-form-item>
+
+            <el-form-item label="Phone Number" :error="customerErrors.phone?.[0]">
+                <el-input v-model="customerForm.phone" placeholder="Enter phone number" />
+            </el-form-item>
+
+            <el-form-item label="Address" :error="customerErrors.address?.[0]">
+                <el-input v-model="customerForm.address" placeholder="Enter address" />
+            </el-form-item>
+
+            <el-form-item label="Profile Image" :error="customerErrors.image?.[0]" class="md:col-span-2">
+                <div class="image-upload-container">
+                    <div class="upload-section">
+                        <el-upload
+                            class="image-uploader"
+                            action="#"
+                            :auto-upload="false"
+                            :show-file-list="false"
+                            :on-change="onCustomerImageSelected"
+                        >
+                            <el-button type="primary" plain>
+                                <el-icon class="mr-1"><Upload /></el-icon>
+                                {{ customerImageUrl ? 'Change Image' : 'Upload Image' }}
+                            </el-button>
+                            <template #tip>
+                                <div class="el-upload__tip text-xs text-gray-500">
+                                    Supported formats: JPG, PNG, GIF. Max size: 2MB
+                                </div>
+                            </template>
+                        </el-upload>
+                    </div>
+                    
+                    <div class="preview-section">
+                        <div v-if="customerImageUrl" class="image-preview">
+                            <el-image 
+                                :src="customerImageUrl" 
+                                fit="cover" 
+                                class="preview-image"
+                            />
+                            <el-button 
+                                type="danger" 
+                                size="small" 
+                                circle
+                                class="remove-btn"
+                                @click="() => {
+                                    customerImageUrl = null;
+                                    customerForm.image = null;
+                                }"
+                            >
+                                <el-icon><Delete /></el-icon>
+                            </el-button>
+                        </div>
+                        <div v-else class="empty-preview">
+                            <el-icon :size="24" class="text-gray-400">
+                                <Picture />
+                            </el-icon>
+                        </div>
+                    </div>
+                </div>
+            </el-form-item>
+        </el-form>
+
+        <template #footer>
+            <span class="dialog-footer">
+                <el-button @click="customerDialogVisible = false">Cancel</el-button>
+                <el-button type="primary" @click="addCustomer" :loading="submittingCustomer">
+                    {{ submittingCustomer ? 'Adding...' : 'Add Customer' }}
+                </el-button>
+            </span>
+        </template>
+    </el-dialog>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch, watchEffect } from 'vue';
-import { User, Delete, Search, Picture, CloseBold, Minus, Plus } from '@element-plus/icons-vue';
+import { User, Delete, Search, Picture, CloseBold, Minus, Plus, Upload } from '@element-plus/icons-vue';
 import { debounce } from 'lodash';
 import { useToastr } from '../../Helper/toaster';
 import axios from 'axios';
@@ -208,6 +299,87 @@ const data = ref({
     payby: 'HandCash',
     price: 0
 });
+
+// Customer dialog
+const customerDialogVisible = ref(false);
+const customerForm = ref({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    image: null
+});
+const customerErrors = ref({});
+const customerImageUrl = ref(null);
+const submittingCustomer = ref(false);
+
+// Show customer dialog
+const showCustomerDialog = () => {
+    resetCustomerForm();
+    customerDialogVisible.value = true;
+};
+
+// Reset customer form
+const resetCustomerForm = () => {
+    customerForm.value = {
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        image: null
+    };
+    customerImageUrl.value = null;
+    customerErrors.value = {};
+};
+
+// Handle customer image selection
+const onCustomerImageSelected = (file) => {
+    customerForm.value.image = file.raw;
+    customerImageUrl.value = URL.createObjectURL(file.raw);
+};
+
+// Add new customer
+const addCustomer = async () => {
+    try {
+        submittingCustomer.value = true;
+        const formData = new FormData();
+        
+        // Add image if selected
+        if (customerForm.value.image) {
+            formData.append('image', customerForm.value.image);
+        }
+        
+        // Add other form fields
+        Object.entries(customerForm.value).forEach(([key, value]) => {
+            if (key !== 'image' && value !== null && value !== undefined) {
+                formData.append(key, value);
+            }
+        });
+
+        const response = await axios.post('/api/customers', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        if (response.data.errors) {
+            customerErrors.value = response.data.errors;
+        } else {
+            toastr.success('Customer added successfully!');
+            customerDialogVisible.value = false;
+            await getCustomers(); // Refresh customer list
+            data.value.customer_id = response.data.id; // Select the newly added customer
+        }
+    } catch (error) {
+        if (error.response?.data?.errors) {
+            customerErrors.value = error.response.data.errors;
+        } else {
+            toastr.error('Failed to add customer');
+        }
+    } finally {
+        submittingCustomer.value = false;
+    }
+};
 
 // Computed properties
 const totalQuantity = computed(() => {
@@ -553,5 +725,65 @@ onMounted(() => {
 
 .el-descriptions-item__content {
     justify-content: flex-end;
+}
+
+/* Add these new styles for the customer dialog */
+.image-upload-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.upload-section {
+    flex: 1;
+}
+
+.preview-section {
+    width: 80px;
+}
+
+.image-preview {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.empty-preview {
+    width: 60px;
+    height: 60px;
+    border: 1px dashed #dcdfe6;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f7fa;
+}
+
+.remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    padding: 4px !important;
+    z-index: 10;
+}
+
+.el-upload__tip {
+    line-height: 1.2;
+    margin-top: 5px;
+}
+
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 </style>
