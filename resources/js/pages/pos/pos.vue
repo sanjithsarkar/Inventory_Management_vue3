@@ -414,8 +414,10 @@ import { debounce } from 'lodash';
 import { useToastr } from '../../Helper/toaster';
 import axios from 'axios';
 import { loadStripe } from '@stripe/stripe-js';
+import { useCurrency } from '../../composables/useCurrency';
 
 const toastr = useToastr();
+const { formatCurrency } = useCurrency();
 
 // Data properties
 const posData = ref([]);
@@ -542,11 +544,6 @@ const remainingPayment = computed(() => {
 });
 
 // Methods
-const formatCurrency = (value) => {
-  return Number(value).toFixed(2);
-};
-
-
 const getCategories = async () => {
     try {
         const response = await axios.get('/api/categories');

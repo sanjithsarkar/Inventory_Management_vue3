@@ -14,7 +14,7 @@
             </div>
             <div class="metric-info">
               <h3>Today's Sales</h3>
-              <p class="metric-value">${{ formatNumber(todaySale) }}</p>
+              <p class="metric-value">{{ formatNumber(todaySale) }}</p>
               <p class="metric-change" :class="saleChange >= 0 ? 'positive' : 'negative'">
                 <el-icon :class="saleChange >= 0 ? 'arrow-up' : 'arrow-down'">
                   <CaretTop v-if="saleChange >= 0" />
@@ -36,7 +36,7 @@
             </div>
             <div class="metric-info">
               <h3>Today's Income</h3>
-              <p class="metric-value">${{ formatNumber(todayIncome) }}</p>
+              <p class="metric-value">{{ formatNumber(todayIncome) }}</p>
               <p class="metric-change" :class="incomeChange >= 0 ? 'positive' : 'negative'">
                 <el-icon :class="incomeChange >= 0 ? 'arrow-up' : 'arrow-down'">
                   <CaretTop v-if="incomeChange >= 0" />
@@ -58,7 +58,7 @@
             </div>
             <div class="metric-info">
               <h3>Today's Due</h3>
-              <p class="metric-value">${{ formatNumber(todayDue) }}</p>
+              <p class="metric-value">{{ formatNumber(todayDue) }}</p>
               <p class="metric-change" :class="dueChange >= 0 ? 'positive' : 'negative'">
                 <el-icon :class="dueChange >= 0 ? 'arrow-up' : 'arrow-down'">
                   <CaretTop v-if="dueChange >= 0" />
@@ -80,7 +80,7 @@
             </div>
             <div class="metric-info">
               <h3>Today's Expense</h3>
-              <p class="metric-value">${{ formatNumber(todayExpense) }}</p>
+              <p class="metric-value">{{ formatNumber(todayExpense) }}</p>
               <p class="metric-change" :class="expenseChange >= 0 ? 'positive' : 'negative'">
                 <el-icon :class="expenseChange >= 0 ? 'arrow-up' : 'arrow-down'">
                   <CaretTop v-if="expenseChange >= 0" />
@@ -105,7 +105,7 @@
           <el-descriptions-item label="Total Expenses">{{ formatNumber(todayExpense) }}</el-descriptions-item>
           <el-descriptions-item label="Net Profit">
             <span :class="netProfit >= 0 ? 'positive' : 'negative'">
-              ${{ formatNumber(netProfit) }}
+              {{ formatNumber(netProfit) }}
             </span>
           </el-descriptions-item>
           <el-descriptions-item label="Profit Margin">
@@ -122,6 +122,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
+import { useCurrency } from '../composables/useCurrency';
 
 import {
   ShoppingCart,
@@ -131,6 +132,9 @@ import {
   CaretTop,
   CaretBottom
 } from '@element-plus/icons-vue';
+
+// Import the currency composable
+const { formatCurrency } = useCurrency();
 
 // Reactive state for today's data
 const todaySale = ref(null);
@@ -189,10 +193,11 @@ const currentDate = new Date().toLocaleDateString('en-US', {
   day: 'numeric'
 });
 
+// Replace the formatNumber function with formatCurrency
 // Number formatter with fallback
 const formatNumber = (num) => {  
   if (num === undefined || num === null || isNaN(num)) return '-';  
-  return Number(num).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');  
+  return formatCurrency(num);  
 };  
 
 // Fetch functions with error handling and consistent API URL paths

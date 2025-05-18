@@ -60,7 +60,11 @@
                     </template>
                 </el-table-column>
 
-                <el-table-column prop="selling_price" label="Sale Price" width="120" sortable />
+                <el-table-column prop="selling_price" label="Sale Price" width="120" sortable>
+                    <template #default="{ row }">
+                        {{ formatCurrency(row.selling_price) }}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="buying_date" label="Buying Date" width="125" sortable />
 
                 <el-table-column label="Image" width="100">
@@ -185,6 +189,7 @@ import { debounce } from 'lodash-es'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { ElMessageBox, ElNotification } from 'element-plus'
+import { useCurrency } from '../../composables/useCurrency'
 import {
     Search,
     Plus,
@@ -210,6 +215,7 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const productData = ref({ data: [] })
 const selectedProductIds = ref([])
+const { formatCurrency } = useCurrency()
 
 // Fetch products with debounce
 const getProducts = debounce(async (page = 1) => {
@@ -262,9 +268,9 @@ const goToCreateProduct = () => {
     router.push('/product/create')
 }
 
+// Replace the formatPrice function with formatCurrency from the composable
 const formatPrice = (price) => {  
-  if (!price) return '0.00';  
-  return Number(price).toFixed(2);  
+  return formatCurrency(price);  
 };  
 
 const selectedProduct = ref(null);  
@@ -346,6 +352,16 @@ const bulkDelete = async () => {
             title: 'Error',
             message: 'Failed to delete selected products'
         })
+    }
+}
+
+// Delete and close dialog
+const deleteAndCloseDialog = async (id) => {
+    try {
+        await deleteProduct(id)
+        detailsVisible.value = false
+    } catch (error) {
+        console.error('Error deleting product:', error)
     }
 }
 

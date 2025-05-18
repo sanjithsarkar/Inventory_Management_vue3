@@ -259,7 +259,10 @@
 import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { Search, View, Edit, Printer } from '@element-plus/icons-vue'
+import { useCurrency } from '../../composables/useCurrency'
 
+// Import the currency composable
+const { formatCurrency } = useCurrency()
 
 const startDate = ref('')
 const endDate = ref('')
@@ -369,12 +372,13 @@ const handleCurrentChange = (val) => {
     getOrders(val)
 }
 
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-    }).format(value || 0)
-}
+// Remove the old formatCurrency function since we're now using the composable
+// const formatCurrency = (value) => {
+//     return new Intl.NumberFormat('en-US', {
+//         style: 'currency',
+//         currency: 'USD'
+//     }).format(value || 0)
+// }
 
 const printOrder = async (orderId) => {
     try {
