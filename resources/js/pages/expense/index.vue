@@ -25,11 +25,11 @@
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="router.push('/expense-category')">
+              <el-dropdown-item @click="navigateToCategories">
                 <el-icon><Folder /></el-icon>
                 <span>Manage Categories</span>
               </el-dropdown-item>
-              <el-dropdown-item @click="router.push('/expense-method')">
+              <el-dropdown-item @click="navigateToMethods">
                 <el-icon><CreditCard /></el-icon>
                 <span>Manage Payment Methods</span>
               </el-dropdown-item>
@@ -37,7 +37,7 @@
           </template>
         </el-dropdown>
 
-        <el-button type="primary" @click="router.push('/expense/create')">
+        <el-button type="primary" @click="navigateToCreate">
           <el-icon class="mr-1">
             <Plus />
           </el-icon>
@@ -94,7 +94,7 @@
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-medium">Expense List</h3>
         <el-date-picker v-model="dateFilter" type="daterange" range-separator="To" start-placeholder="Start date"
-          end-placeholder="End date" @change="getExpenses" />
+          end-placeholder="End date" @change="handleDateChange" />
       </div>
 
       <el-table v-loading="loading" :data="expenses" style="width: 100%" border>
@@ -105,11 +105,11 @@
             ${{ formatNumber(scope.row.amount) }}
           </template>
         </el-table-column>
-        <!-- <el-table-column label="Date" prop="expense_date" min-width="100">
+        <el-table-column label="Date" prop="expense_date" min-width="100">
           <template #default="scope">
             {{ formatDate(scope.row.expense_date) }}
           </template>
-        </el-table-column> -->
+        </el-table-column>
         <el-table-column label="Category" min-width="120">
           <template #default="scope">
             {{ scope.row.category ? scope.row.category.name : 'N/A' }}
@@ -138,7 +138,7 @@
         <el-table-column label="Actions" width="150" fixed="right">
           <template #default="scope">
             <el-button-group>
-              <el-button size="small" type="primary" @click="router.push(`/expense/edit/${scope.row.expense_id}`)">
+              <el-button size="small" type="primary" @click="editExpense(scope.row.expense_id)">
                 <el-icon>
                   <Edit />
                 </el-icon>
@@ -163,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessageBox, ElMessage } from 'element-plus';
@@ -184,6 +184,23 @@ const totalExpenses = ref(0);
 const todayExpense = ref(0);
 const yesterdayExpense = ref(0);
 const monthlyExpense = ref(0);
+
+// Navigation methods
+const navigateToCreate = () => {
+  router.push('/expense/create');
+};
+
+const navigateToCategories = () => {
+  router.push('/expense-category');
+};
+
+const navigateToMethods = () => {
+  router.push('/expense-method');
+};
+
+const editExpense = (id) => {
+  router.push(`/expense/edit/${id}`);
+};
 
 // Methods
 const getExpenses = async () => {
@@ -230,6 +247,10 @@ const fetchExpenseStats = async () => {
 
 const handlePageChange = (page) => {
   currentPage.value = page;
+  getExpenses();
+};
+
+const handleDateChange = () => {
   getExpenses();
 };
 
