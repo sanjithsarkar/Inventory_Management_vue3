@@ -89,16 +89,16 @@
                                 <span class="summary-value">{{ totalQuantity }}</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="Sub Total">
-                                <span class="summary-value">{{ formatCurrency(totalSubTotal) }}</span>
+                                <span class="summary-value">{{ totalSubTotal }}</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="Discount (%)">
                                 <div class="discount-control">
                                     <el-input-number v-model="discount" :min="0" :max="100" size="default" controls-position="right" />
-                                    <span class="discount-amount">({{ formatCurrency(discountPayment) }})</span>
+                                    <span class="discount-amount">({{ discountPayment }})</span>
                                 </div>
                             </el-descriptions-item>
                             <el-descriptions-item label="Total Amount">
-                                <span class="summary-value total-amount">{{ formatCurrency(totalAmount) }}</span>
+                                <span class="summary-value total-amount">{{ totalAmount }}</span>
                             </el-descriptions-item>
                         </el-descriptions>
                     </div>
@@ -132,15 +132,28 @@
                                     </el-select>
                                 </el-descriptions-item>
                                 <el-descriptions-item label="Payment Amount">
-                                    <el-input 
-                                        v-model="paymentReceive" 
-                                        :min="0" 
-                                        :max="totalAmount" 
-                                        :precision="2"
-                                        placeholder="Enter payment amount"
-                                    >
-                                        <template #prefix>$</template>
-                                    </el-input>
+                                    <div class="payment-amount-container">
+                                        <el-input 
+                                            v-model="paymentReceive" 
+                                            :min="0" 
+                                            :max="totalAmount" 
+                                            :precision="2"
+                                            placeholder="Enter payment amount"
+                                        >
+                                            <template #prefix>$</template>
+                                        </el-input>
+                                        <el-button 
+                                            type="primary" 
+                                            size="small" 
+                                            @click="setFullAmount" 
+                                            class="full-amount-btn"
+                                        >
+                                            Full Amount
+                                        </el-button>
+                                    </div>
+                                    <div class="payment-hint">
+                                        <small>Payment amount automatically updates with the total</small>
+                                    </div>
                                 </el-descriptions-item>
                                 <el-descriptions-item label="Due Amount">
                                     <el-tag :type="remainingPayment > 0 ? 'danger' : 'success'" size="large">
@@ -509,23 +522,23 @@ const addCustomer = async () => {
 
 // Computed properties
 const totalQuantity = computed(() => {
-    return posData.value.reduce((sum, item) => sum + parseFloat(item.quantity), 0);
+    return formatCurrency(posData.value.reduce((sum, item) => sum + parseFloat(item.quantity), 0));
 });
 
 const totalSubTotal = computed(() => {
-    return posData.value.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.price)), 0);
+    return formatCurrency(posData.value.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.price)), 0));
 });
 
 const discountPayment = computed(() => {
-    return totalSubTotal.value * discount.value / 100;
+    return formatCurrency(totalSubTotal.value * discount.value / 100);
 });
 
 const totalAmount = computed(() => {
-    return totalSubTotal.value - discountPayment.value;
+    return formatCurrency(totalSubTotal.value - discountPayment.value);
 });
 
 const remainingPayment = computed(() => {
-    return paymentReceive.value ? totalAmount.value - parseFloat(paymentReceive.value) : totalAmount.value;
+    return formatCurrency(paymentReceive.value ? totalAmount.value - parseFloat(paymentReceive.value) : totalAmount.value);
 });
 
 // Methods
@@ -699,7 +712,7 @@ watchEffect(() => {
     data.value.discountPayment = discountPayment.value;
     data.value.totalAmount = totalAmount.value;
     data.value.paymentReceive = paymentReceive.value;
-    data.value.duePayment = formatCurrency(remainingPayment.value);
+    data.value.duePayment = remainingPayment.value;
     data.value.price = productData.value.price;
 });
 
@@ -738,6 +751,16 @@ const selectedCustomer = computed(() => {
     if (!data.value.customer_id || !customerData.value.data) return null;
     return customerData.value.data.find(customer => customer.id === data.value.customer_id);
 });
+
+// Watch totalAmount and update paymentReceive automatically when it changes
+watch(totalAmount, (newValue) => {
+    paymentReceive.value = newValue;
+});
+
+// Add a button to set full amount
+const setFullAmount = () => {
+    paymentReceive.value = totalAmount.value;
+};
 </script>
 
 <style scoped>
@@ -1024,5 +1047,21 @@ const selectedCustomer = computed(() => {
 /* Fix the deep selector syntax */
 :deep(.el-empty__image) {
     height: 75px !important;
+}
+
+.payment-amount-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.full-amount-btn {
+    flex-shrink: 0;
+}
+
+.payment-hint {
+    margin-top: 5px;
+    color: #909399;
+    font-size: 12px;
 }
 </style>
