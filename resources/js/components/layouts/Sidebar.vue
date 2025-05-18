@@ -5,22 +5,8 @@
     :class="{ collapsed }"
   >
     <div class="logo-container" @click="$emit('toggle-collapse')">
-      <transition name="fade" mode="out-in">
-        <img
-          v-if="!collapsed"
-          src="@/assets/logo-full.png"
-          alt="Logo"
-          class="logo-full"
-          key="full"
-        />
-        <img
-          v-else
-          src="@/assets/logo-icon.png"
-          alt="Logo"
-          class="logo-icon"
-          key="icon"
-        />
-      </transition>
+      <span class="logo-text" v-if="!collapsed">Inventory Management</span>
+      <el-icon v-else><Menu /></el-icon>
     </div>
 
     <el-scrollbar class="sidebar-scrollbar">
@@ -71,36 +57,23 @@
   </el-aside>
 </template>
 
-<script>
-import { PieChart, User, ShoppingCart, Tickets, Setting } from '@element-plus/icons-vue'
-import { useRoute } from 'vue-router'
+<script setup>
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import { PieChart, User, ShoppingCart, Tickets, Setting, Menu } from '@element-plus/icons-vue';
 
-export default {
-  name: 'AdminSidebar',
-  props: {
-    collapsed: {
-      type: Boolean,
-      default: false
-    }
-  },
-  data() {
-    return {
-      route: useRoute()
-    }
-  },
-  computed: {
-    activeMenu() {
-      return this.route.path
-    }
-  },
-  components: {
-    PieChart,
-    User,
-    ShoppingCart,
-    Tickets,
-    Setting
+const props = defineProps({
+  collapsed: {
+    type: Boolean,
+    default: false
   }
-}
+});
+
+const route = useRoute();
+
+const activeMenu = computed(() => {
+  return route.path;
+});
 </script>
 
 <style scoped>
@@ -114,31 +87,25 @@ export default {
 }
 
 .logo-container {
-  height: 60px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s;
+  padding: 0 16px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
-.logo-container:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.logo-full {
-  height: 32px;
-  transition: all 0.3s;
-}
-
-.logo-icon {
-  height: 24px;
-  transition: all 0.3s;
+.logo-text {
+  color: white;
 }
 
 .sidebar-scrollbar {
-  height: calc(100vh - 60px);
+  height: calc(100vh - 64px);
 }
 
 .sidebar-menu {
@@ -146,16 +113,6 @@ export default {
 }
 
 .sidebar-menu:not(.el-menu--collapse) {
-  width: 100%;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+  width: 220px;
 }
 </style>

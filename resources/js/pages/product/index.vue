@@ -46,6 +46,11 @@
                 </el-table-column>
                 <el-table-column prop="sku" label="SKU" width="135" sortable />
                 <el-table-column prop="category.name" label="Category" width="130" sortable />
+                <el-table-column prop="supplier.name" label="Supplier" width="130" sortable>
+                    <template #default="{ row }">
+                        <span>{{ row.supplier ? row.supplier.name : 'N/A' }}</span>
+                    </template>
+                </el-table-column>
 
                 <el-table-column prop="quantity" label="Quantity" width="110" sortable>
                     <template #default="{ row }">
@@ -149,6 +154,9 @@
                     </el-descriptions-item>
                     <el-descriptions-item label="Description">
                         {{ selectedProduct.description || 'No description available' }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="Supplier">
+                        {{ selectedProduct.supplier ? selectedProduct.supplier.name : 'N/A' }}
                     </el-descriptions-item>
                 </el-descriptions>
             </div>

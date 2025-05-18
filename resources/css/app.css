@@ -1,5 +1,7 @@
-@import 'admin-lte/dist/css/adminlte.css';
-
-@import 'admin-lte/plugins/fontawesome-free/css/all.min.css';
-
 @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback');
+
+/* You might want to add Bootstrap CSS directly if you're still using it */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* Add FontAwesome if you still need icons */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');

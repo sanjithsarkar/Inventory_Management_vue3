@@ -130,7 +130,13 @@ const loading = ref(false)
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
-const supplierData = ref({ data: [] })
+const supplierData = ref({ 
+    data: [],
+    total: 0,
+    current_page: 1,
+    last_page: 1,
+    per_page: 10
+})
 const selectedSupplier = ref(null)
 const detailsVisible = ref(false)
 
@@ -165,7 +171,8 @@ const handleCurrentChange = (page) => {
 
 const handleSizeChange = (size) => {
     pageSize.value = size
-    getSuppliers(currentPage.value)
+    currentPage.value = 1
+    getSuppliers(1)
 }
 
 // View supplier details
