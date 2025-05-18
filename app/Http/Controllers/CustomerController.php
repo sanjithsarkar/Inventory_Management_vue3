@@ -34,7 +34,7 @@ class CustomerController extends Controller
      */
     public function create()
     {
-        //
+        return response()->json();
     }
 
     /**
@@ -42,7 +42,6 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
-        //  dd($request->all());
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:3',
             'email' => 'required|email',
@@ -77,7 +76,9 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
-        //
+        
+        $customer->image_url = Storage::url($customer->image);
+        return response()->json($customer);
     }
 
     /**
@@ -85,7 +86,8 @@ class CustomerController extends Controller
      */
     public function edit(Customer $customer)
     {
-        //
+        $customer->image_url = Storage::url($customer->image);
+        return response()->json($customer);
     }
 
     /**
@@ -93,7 +95,38 @@ class CustomerController extends Controller
      */
     public function update(Request $request, Customer $customer)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|min:3',
+            'email' => 'required|email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()]);
+        }
+
+        $customer->name = $request->name;
+        $customer->email = $request->email;
+        $customer->phone = $request->phone;
+        $customer->address = $request->address;
+
+        if ($request->hasFile('image')) {
+            // Delete old image if it exists
+            if ($customer->image) {
+                $oldImagePath = storage_path('app/' . $customer->image);
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+            }
+            
+            // Store new image
+            $image = $request->file('image');
+            $imageName = time() . $image->getClientOriginalName();
+            $imgPath = $image->storeAs('public/Customers', $imageName);
+            $customer->image = $imgPath;
+        }
+
+        $customer->save();
+        return response()->json(['success' => true, 'message' => 'Customer updated successfully']);
     }
 
     /**

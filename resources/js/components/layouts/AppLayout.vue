@@ -44,6 +44,16 @@
                         <el-icon>
                             <Shop />
                         </el-icon>
+                        <span>Customers</span>
+                    </template>
+                    <el-menu-item index="/customer">List</el-menu-item>
+                    <el-menu-item index="/customer/create">Add New</el-menu-item>
+                </el-sub-menu>
+                <el-sub-menu index="4">
+                    <template #title>
+                        <el-icon>
+                            <Shop />
+                        </el-icon>
                         <span>Suppliers</span>
                     </template>
                     <el-menu-item index="/supplier">List</el-menu-item>

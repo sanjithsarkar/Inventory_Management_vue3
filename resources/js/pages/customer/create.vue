@@ -1,129 +1,159 @@
 <script setup>
-import axios from 'axios';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
+import { ElNotification } from 'element-plus';
+import { ArrowLeft, Upload, Picture } from '@element-plus/icons-vue';
 
-
-const form = ref({});
-const errors = ref({});
 const router = useRouter();
+const loading = ref(false);
+const submitting = ref(false);
 
+const form = ref({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    image: null
+});
+
+const errors = ref({});
 const imageUrl = ref(null);
 
 const onFileSelected = (event) => {
-  form.value.image = event.target.files[0];
-  imageUrl.value = URL.createObjectURL(form.value.image);
+    form.value.image = event.target.files[0];
+    imageUrl.value = URL.createObjectURL(form.value.image);
 };
 
-const customerInsert = () => {
-
-    let formData = new FormData();
-    formData.append('image', form.value.image);
-
-    axios.post('api/customers', formData, {
-        params: form.value
-    })
-    .then(res => {
-        if(res.data.errors){
-            errors.value = res.data.errors;
-        }else{
-            router.push({ path: '/customer'});
+const customerInsert = async () => {
+    try {
+        submitting.value = true;
+        const formData = new FormData();
+        
+        // Add image if selected
+        if (form.value.image) {
+            formData.append('image', form.value.image);
         }
-    })
-    .catch(res => {
-        errors.value = res.response.data.errors;
-    })
-}
+        
+        // Add other form fields
+        Object.entries(form.value).forEach(([key, value]) => {
+            if (key !== 'image' && value !== null && value !== undefined) {
+                formData.append(key, value);
+            }
+        });
+
+        const response = await axios.post('/api/customers', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+
+        if (response.data.errors) {
+            errors.value = response.data.errors;
+        } else {
+            ElNotification.success({
+                title: 'Success',
+                message: 'Customer created successfully'
+            });
+            router.push('/customer');
+        }
+    } catch (error) {
+        if (error.response?.data?.errors) {
+            errors.value = error.response.data.errors;
+        } else {
+            ElNotification.error({
+                title: 'Error',
+                message: 'Failed to create customer'
+            });
+        }
+    } finally {
+        submitting.value = false;
+    }
+};
 </script>
 
 <template>
     <section id="customer-create" class="p-4">
-        <div>
-            <router-link to="/customer" class="btn btn-primary">Customer List</router-link>
+        <div class="mb-4">
+            <el-button type="primary" @click="router.push('/customer')">
+                <el-icon class="mr-1">
+                    <ArrowLeft />
+                </el-icon>
+                Back to Customer List
+            </el-button>
         </div>
 
-        <div class="row">
-            <div class="col-xl-12 col-lg-12 col-md-12">
-                <div class="card shadow-sm my-4">
-                    <div class="card-header d-flex justify-content-center">
-                        <h4 class="text-gray-900">Add Customer</h4>
-                    </div>
-
-                    <div class="card-body">
-                        <form class="user" @submit.prevent="customerInsert" enctype="multipart/form-data">
-                            <div class="form-group">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control m-2 py-2" id="exampleInputFirstName"
-                                            placeholder="Enter Your Full Name" v-model="form.name">
-                                        <small class="text-danger" v-if="errors.name"> {{ errors.name[0] }} </small>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <input type="email" class="form-control m-2 py-2" id="exampleInputFirstName"
-                                            placeholder="Enter Your Email" v-model="form.email">
-                                        <small class="text-danger" v-if="errors.email"> {{ errors.email[0] }} </small>
-                                    </div>
-
-                                </div>
-                            </div>
-
-
-                            <div class="form-group">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control m-2 py-2" id="exampleInputFirstName"
-                                            placeholder="Enter Your Address" v-model="form.address">
-                                        <small class="text-danger" v-if="errors.address"> {{ errors.address[0] }} </small>
-                                    </div>
-
-
-                                    <!-- <div class="col-md-6">
-                                        <input type="text" class="form-control m-2 py-2" id="exampleInputFirstName"
-                                            placeholder="Enter Your Salary" v-model="form.salary">
-                                        <small class="text-danger" v-if="errors.salary"> {{ errors.salary[0] }} </small>
-                                    </div> -->
-
-                                </div>
-                            </div>
-
-
-                            <div class="form-group">
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="text" class="form-control m-2 py-2" id="exampleInputFirstName"
-                                            placeholder="Enter Your phone Number" v-model="form.phone">
-                                        <small class="text-danger" v-if="errors.phone"> {{ errors.phone[0] }} </small>
-                                    </div>
-
-
-                                    <div class="col-md-6">
-                                        <div class="row">
-                                            <div class="col-md-7">
-                                                <input type="file" class="m-2 py-2" id="customFile"
-                                                    @change="onFileSelected">
-
-                                                <small class="text-danger" v-if="errors.image"> {{ errors.image[0] }}</small>
-                                            </div>
-
-
-                                            <div class="col-md-5">
-                                                <img :src="imageUrl" v-if="imageUrl" style="height: 50px; width: 60px;">
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group d-flex justify-content-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-block px-4 py-2">Submit</button>
-                            </div>
-                        </form>
-                    </div>
+        <el-card class="box-card" shadow="hover">
+            <template #header>
+                <div class="text-center">
+                    <h4 class="text-gray-900 m-0">Add New Customer</h4>
                 </div>
-            </div>
-        </div>
+            </template>
+
+            <el-form 
+                :model="form" 
+                label-position="top" 
+                @submit.prevent="customerInsert"
+                class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4"
+            >
+                <el-form-item label="Full Name" :error="errors.name?.[0]">
+                    <el-input v-model="form.name" placeholder="Enter full name" />
+                </el-form-item>
+
+                <el-form-item label="Email" :error="errors.email?.[0]">
+                    <el-input v-model="form.email" placeholder="Enter email address" type="email" />
+                </el-form-item>
+
+                <el-form-item label="Phone Number" :error="errors.phone?.[0]">
+                    <el-input v-model="form.phone" placeholder="Enter phone number" />
+                </el-form-item>
+
+                <el-form-item label="Address" :error="errors.address?.[0]">
+                    <el-input v-model="form.address" placeholder="Enter address" />
+                </el-form-item>
+
+                <el-form-item label="Customer Image" :error="errors.image?.[0]" class="md:col-span-2">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-1">
+                            <input 
+                                type="file" 
+                                @change="onFileSelected" 
+                                class="form-control" 
+                                accept="image/*"
+                            >
+                            <div class="text-xs text-gray-500 mt-1">
+                                Supported formats: JPG, PNG, GIF. Max size: 2MB
+                            </div>
+                        </div>
+                        <div v-if="imageUrl" class="w-24 h-24 border rounded overflow-hidden">
+                            <img :src="imageUrl" class="w-full h-full object-cover" />
+                        </div>
+                        <div v-else class="w-24 h-24 border rounded flex items-center justify-center bg-gray-100">
+                            <el-icon :size="24" class="text-gray-400">
+                                <Picture />
+                            </el-icon>
+                        </div>
+                    </div>
+                </el-form-item>
+
+                <div class="md:col-span-2 flex justify-center mt-4">
+                    <el-button 
+                        type="primary" 
+                        native-type="submit" 
+                        :loading="submitting"
+                        class="w-40"
+                    >
+                        Create Customer
+                    </el-button>
+                </div>
+            </el-form>
+        </el-card>
     </section>
 </template>
+
+<style scoped>
+.box-card {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+</style>
