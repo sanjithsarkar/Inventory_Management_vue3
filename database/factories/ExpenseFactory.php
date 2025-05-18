@@ -28,11 +28,20 @@ class ExpenseFactory extends Factory
     public function definition(): array
     {
         $isRecurring = $this->faker->boolean(20); // 20% chance of being recurring
+        $expenseDate = $this->faker->dateTimeBetween('-3 months', 'now');
         
         return [
-            'user_id' => User::inRandomOrder()->first()->id ?? User::factory(),
-            'category_id' => ExpenseCategory::inRandomOrder()->first()->category_id ?? ExpenseCategory::factory(),
-            'method_id' => ExpenseMethod::inRandomOrder()->first()->method_id ?? ExpenseMethod::factory(),
+            'user_id' => function () {
+                return User::inRandomOrder()->first()->id ?? User::factory()->create()->id;
+            },
+            'category_id' => function () {
+                return ExpenseCategory::inRandomOrder()->first()->category_id ?? 
+                       ExpenseCategory::factory()->create()->category_id;
+            },
+            'method_id' => function () {
+                return ExpenseMethod::inRandomOrder()->first()->method_id ?? 
+                       ExpenseMethod::factory()->create()->method_id;
+            },
             'amount' => $this->faker->randomFloat(2, 10, 1000),
             'description' => $this->faker->sentence(),
             'expense_date' => $this->faker->dateTimeBetween('-3 months', 'now'),

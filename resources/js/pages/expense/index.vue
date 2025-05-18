@@ -324,4 +324,7 @@ onMounted(() => {
   --el-table-border-color: #ebeef5;
   --el-table-header-background-color: #f5f7fa;
 }
+.action-buttons {
+	display: flex;
+}
 </style>
