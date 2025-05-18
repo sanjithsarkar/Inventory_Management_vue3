@@ -23,18 +23,18 @@
         <el-table :data="orderData" border stripe v-loading="loading" style="width: 100%"
             @sort-change="handleSortChange">
             <el-table-column type="index" width="60" label="No." />
-            <el-table-column prop="order_number" label="Order No" sortable />
+            <el-table-column prop="order_number" width="120" label="Order No" sortable />
             <el-table-column label="Customer">
                 <template #default="{ row }">
                     {{ row.customer?.name || 'N/A' }}
                 </template>
             </el-table-column>
-            <el-table-column prop="quantity" label="Qty" sortable />
-            <el-table-column prop="subTotal" label="Subtotal" sortable>
+            <el-table-column prop="quantity" width="90" label="Qty" sortable />
+            <!-- <el-table-column prop="subTotal" label="Subtotal" sortable>
                 <template #default="{ row }">
                     {{ formatCurrency(row.subTotal) }}
                 </template>
-            </el-table-column>
+            </el-table-column> -->
             <el-table-column prop="discount" label="Discount" sortable>
                 <template #default="{ row }">
                     {{ row.discount < 1 ? '0%' : `${row.discount}%` }} </template>
@@ -49,13 +49,13 @@
                     {{ formatCurrency(row.paid) }}
                 </template>
             </el-table-column>
-            <el-table-column prop="due" label="Due" sortable>
+            <el-table-column prop="due" width="100" label="Due" sortable>
                 <template #default="{ row }">
                     {{ formatCurrency(row.due) }}
                 </template>
             </el-table-column>
             <el-table-column prop="date" label="Date" sortable />
-            <el-table-column label="Actions" width="250">
+            <el-table-column label="Actions" width="240">
                 <template #default="{ row }">
                     <el-button @click="showModal(row.id)" type="primary" plain size="small">
                         <el-icon>
