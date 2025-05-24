@@ -34,3 +34,13 @@ Route::get('/{any}', function () {
 // Route::get('stripe/success', [PosController::class, 'success'])->name('stripe.success');
 // Route::get('stripe/cancel', [PosController::class, 'cancel'])->name('stripe.cancel');
 // Route::post('/webhook/stripe', [PosController::class, 'handleWebhook']);
+
+Route::get('/test-paypal', function () {
+    try {
+        $paypalService = app(App\Services\PayPal\PayPalService::class);
+        $token = $paypalService->client->getAccessToken();
+        return response()->json(['success' => true, 'message' => 'PayPal configuration is working!']);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+    }
+});
