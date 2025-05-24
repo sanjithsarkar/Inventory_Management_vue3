@@ -32,7 +32,7 @@
             <el-table-column prop="quantity" label="Qty" sortable />
             <el-table-column prop="subTotal" label="Subtotal" sortable>
                 <template #default="{ row }">
-                    {{ formatCurrency(row.subTotal) }}
+                    {{ $formatCurrency(row.subTotal) }}
                 </template>
             </el-table-column>
             <el-table-column prop="discount" label="Discount" sortable>
@@ -41,17 +41,17 @@
             </el-table-column>
             <el-table-column prop="total" label="Total" sortable>
                 <template #default="{ row }">
-                    {{ formatCurrency(row.total) }}
+                    {{ $formatCurrency(row.total) }}
                 </template>
             </el-table-column>
             <el-table-column prop="paid" label="Paid" sortable>
                 <template #default="{ row }">
-                    {{ formatCurrency(row.paid) }}
+                    {{ $formatCurrency(row.paid) }}
                 </template>
             </el-table-column>
             <el-table-column prop="due" label="Due" sortable>
                 <template #default="{ row }">
-                    {{ formatCurrency(row.due) }}
+                    {{ $formatCurrency(row.due) }}
                 </template>
             </el-table-column>
             <el-table-column prop="date" label="Date" sortable />
@@ -117,7 +117,7 @@
                                 }}</el-descriptions-item>
                             <el-descriptions-item label="quantity">{{ orderProduct[0]?.quantity
                                 }}</el-descriptions-item>
-                            <el-descriptions-item label="price">{{ formatCurrency(orderProduct[0]?.price)
+                            <el-descriptions-item label="price">{{ $formatCurrency(orderProduct[0]?.price)
                             }}</el-descriptions-item>
                         </el-descriptions>
                     </el-card>
@@ -204,8 +204,8 @@
                                 <td class="text-left">{{ product.name }}</td>
                                 <td class="text-center">{{ product.pro_id }}</td>
                                 <td class="text-center">{{ product.quantity }}</td>
-                                <td class="text-right">{{ formatCurrency(product.price) }}</td>
-                                <td class="text-right">{{ formatCurrency(product.price * product.quantity) }}</td>
+                                <td class="text-right">{{ $formatCurrency(product.price) }}</td>
+                                <td class="text-right">{{ $formatCurrency(product.price * product.quantity) }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -215,24 +215,24 @@
                 <section class="summary-section">
                     <div class="summary-grid">
                         <div class="summary-label">Subtotal:</div>
-                        <div class="summary-value">{{ formatCurrency(printableOrder.subTotal) }}</div>
+                        <div class="summary-value">{{ $formatCurrency(printableOrder.subTotal) }}</div>
 
                         <div class="summary-label">Discount ({{ printableOrder.discount }}%):</div>
-                        <div class="summary-value discount">-{{ formatCurrency(printableOrder.subTotal *
+                        <div class="summary-value discount">-{{ $formatCurrency(printableOrder.subTotal *
                             (printableOrder.discount/100)) }}</div>
 
                         <div class="summary-label">Tax:</div>
-                        <div class="summary-value">{{ formatCurrency(printableOrder.total - printableOrder.subTotal +
+                        <div class="summary-value">{{ $formatCurrency(printableOrder.total - printableOrder.subTotal +
                             (printableOrder.subTotal * (printableOrder.discount/100))) }}</div>
 
                         <div class="summary-label grand-total">Total:</div>
-                        <div class="summary-value grand-total">{{ formatCurrency(printableOrder.total) }}</div>
+                        <div class="summary-value grand-total">{{ $formatCurrency(printableOrder.total) }}</div>
 
                         <div class="summary-label">Amount Paid:</div>
-                        <div class="summary-value">{{ formatCurrency(printableOrder.paid) }}</div>
+                        <div class="summary-value">{{ $formatCurrency(printableOrder.paid) }}</div>
 
                         <div class="summary-label">Balance Due:</div>
-                        <div class="summary-value">{{ formatCurrency(printableOrder.due) }}</div>
+                        <div class="summary-value">{{ $formatCurrency(printableOrder.due) }}</div>
                     </div>
 
                     <div class="payment-method">
@@ -290,7 +290,21 @@ const debouncedGetOrders = () => {
     }, 500)
 }
 
-watch([startDate, endDate, searchQuery], debouncedGetOrders, { immediate: true })
+// Only trigger search when searchQuery changes, not dates
+watch(searchQuery, debouncedGetOrders)
+
+// Add separate watchers for date fields with immediate false
+watch(startDate, () => {
+    // Reset to page 1 when date changes
+    currentPage.value = 1
+    getOrders(1)
+}, { immediate: false })
+
+watch(endDate, () => {
+    // Reset to page 1 when date changes
+    currentPage.value = 1
+    getOrders(1)
+}, { immediate: false })
 
 onBeforeUnmount(() => clearTimeout(timeout.value))
 
@@ -309,15 +323,27 @@ const getOrders = async (page = 1) => {
     pagination.value.current_page = page
 
     try {
-        const response = await axios.get('/api/orders', {
-            params: {
-                start_date: startDate.value || undefined,
-                end_date: endDate.value || undefined,
-                search: searchQuery.value || undefined,
-                per_page: pageSize.value,
-                page
-            }
-        })
+        // Format dates properly for the API
+        const params = {
+            per_page: pageSize.value,
+            page
+        }
+        
+        if (searchQuery.value) {
+            params.search = searchQuery.value
+        }
+        
+        if (startDate.value) {
+            params.start_date = startDate.value
+        }
+        
+        if (endDate.value) {
+            params.end_date = endDate.value
+        }
+        
+        console.log('API request params:', params)
+        
+        const response = await axios.get('/api/orders', { params })
         orderData.value = response.data.data
         pagination.value = { ...pagination.value, ...response.data.pagination }
     } catch (error) {
@@ -365,7 +391,7 @@ const handleCurrentChange = (val) => {
     getOrders(val)
 }
 
-const formatCurrency = (value) => {
+const printCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD'

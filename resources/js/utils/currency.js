@@ -6,10 +6,17 @@ let loadingPromise = null;
 
 /**
  * Load currency settings from the server
+ * @param {boolean} useCache - Whether to use cached settings (default: true)
  * @returns {Promise} Promise that resolves with currency settings
  */
-export const loadCurrencySettings = async () => {
-  if (currencySettings) {
+export const loadCurrencySettings = async (useCache = true) => {
+  // If useCache is false, reset the cache and loading promise
+  if (!useCache) {
+    currencySettings = null;
+    loadingPromise = null;
+  }
+  
+  if (currencySettings && useCache) {
     return currencySettings;
   }
   

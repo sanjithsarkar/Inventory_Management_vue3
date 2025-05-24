@@ -89,16 +89,16 @@
                                 <span class="summary-value">{{ totalQuantity }}</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="Sub Total">
-                                <span class="summary-value">{{ formatCurrency(totalSubTotal) }}</span>
+                                <span class="summary-value">{{ formattedTotalSubTotal }}</span>
                             </el-descriptions-item>
                             <el-descriptions-item label="Discount (%)">
                                 <div class="discount-control">
                                     <el-input-number v-model="discount" :min="0" :max="100" size="default" controls-position="right" />
-                                    <span class="discount-amount">({{ formatCurrency(discountPayment) }})</span>
+                                    <span class="discount-amount">({{ formattedDiscountPayment }})</span>
                                 </div>
                             </el-descriptions-item>
                             <el-descriptions-item label="Total Amount">
-                                <span class="summary-value total-amount">{{ formatCurrency(totalAmount) }}</span>
+                                <span class="summary-value total-amount">{{ formattedTotalAmount }}</span>
                             </el-descriptions-item>
                         </el-descriptions>
                     </div>
@@ -133,12 +133,14 @@
                                 </el-descriptions-item>
                                 <el-descriptions-item label="Payment Amount">
                                     <div class="payment-amount-container">
-                                        <el-input
-                                            v-model="paymentReceive" 
+                                        <el-input-number
+                                            v-model="data.paymentReceive" 
                                             :min="0" 
                                             :max="totalAmount" 
                                             :precision="2"
                                             :step="0.01"
+                                            :formatter="(value) => formatAmount(value)"
+                                            :parser="(value) => parseFloat(value.replace(/[^\d.-]/g, ''))"
                                             placeholder="Enter payment amount"
                                             style="width: 100%"
                                         />
@@ -157,7 +159,7 @@
                                 </el-descriptions-item>
                                 <el-descriptions-item label="Due Amount">
                                     <el-tag :type="remainingPayment > 0 ? 'danger' : 'success'" size="large">
-                                        {{ formatCurrency(remainingPayment) }}
+                                        {{ formattedRemainingPayment }}
                                     </el-tag>
                                 </el-descriptions-item>
                                 <input type="hidden" v-model="data.duePayment" />
@@ -166,7 +168,6 @@
                                 <input type="hidden" v-model="data.discount" />
                                 <input type="hidden" v-model="data.discountPayment" />
                                 <input type="hidden" v-model="data.totalAmount" />
-                                <input type="hidden" v-model="data.paymentReceive" />
                                 <input type="hidden" v-model="data.duePayment" />
                                 <input type="hidden" v-model="data.price" />
                                 <el-descriptions-item label="Payment Method">
@@ -550,59 +551,59 @@ const totalQuantity = computed(() => {
 });
 
 const totalSubTotal = computed(() => {
-    return formatAmount(posData.value.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.price)), 0));
+    return posData.value.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.price)), 0);
 });
 
 const discountPayment = computed(() => {
-    return formatAmount(totalSubTotal.value * discount.value / 100);
+    return totalSubTotal.value * discount.value / 100;
 });
 
 const totalAmount = computed(() => {
-    return formatAmount(totalSubTotal.value - discountPayment.value);
+    return totalSubTotal.value - discountPayment.value;
 });
 
 const remainingPayment = computed(() => {
     const remaining = paymentReceive.value ? totalAmount.value - parseFloat(paymentReceive.value) : totalAmount.value;
-    return formatAmount(remaining);
+    return remaining;
 });
 
 // Computed properties for display (using formatted strings)
 
-// const formattedTotalSubTotal = computed(() => {
-//   try {
-//     return formatCurrency(totalSubTotal.value);
-//   } catch (error) {
-//     console.warn('Using fallback formatter for currency');
-//     return fallbackFormatCurrency(totalSubTotal.value);
-//   }
-// });
+const formattedTotalSubTotal = computed(() => {
+  try {
+    return formatCurrency(totalSubTotal.value);
+  } catch (error) {
+    console.warn('Using fallback formatter for currency');
+    return fallbackFormatCurrency(totalSubTotal.value);
+  }
+});
 
-// const formattedDiscountPayment = computed(() => {
-//   try {
-//     return formatCurrency(discountPayment.value);
-//   } catch (error) {
-//     console.warn('Using fallback formatter for currency');
-//     return fallbackFormatCurrency(discountPayment.value);
-//   }
-// });
+const formattedDiscountPayment = computed(() => {
+  try {
+    return formatCurrency(discountPayment.value);
+  } catch (error) {
+    console.warn('Using fallback formatter for currency');
+    return fallbackFormatCurrency(discountPayment.value);
+  }
+});
 
-// const formattedTotalAmount = computed(() => {
-//   try {
-//     return formatCurrency(totalAmount.value);
-//   } catch (error) {
-//     console.warn('Using fallback formatter for currency');
-//     return fallbackFormatCurrency(totalAmount.value);
-//   }
-// });
+const formattedTotalAmount = computed(() => {
+  try {
+    return formatCurrency(totalAmount.value);
+  } catch (error) {
+    console.warn('Using fallback formatter for currency');
+    return fallbackFormatCurrency(totalAmount.value);
+  }
+});
 
-// const formattedRemainingPayment = computed(() => {
-//   try {
-//     return formatCurrency(remainingPayment.value);
-//   } catch (error) {
-//     console.warn('Using fallback formatter for currency');
-//     return fallbackFormatCurrency(remainingPayment.value);
-//   }
-// });
+ const formattedRemainingPayment = computed(() => {
+  try {
+    return formatCurrency(remainingPayment.value);
+  } catch (error) {
+    console.warn('Using fallback formatter for currency');
+    return fallbackFormatCurrency(remainingPayment.value);
+  }
+});
 
 // Methods
 const getCategories = async () => {
