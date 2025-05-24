@@ -411,6 +411,7 @@ import {
     User, Delete, Search, Picture, CloseBold, Minus, Plus, Upload, 
     ShoppingCart, Goods, CreditCard, Money, Tickets, Present, Check, Close 
 } from '@element-plus/icons-vue';
+import { ElLoading, ElMessage } from 'element-plus';
 import { debounce } from 'lodash';
 import { useToastr } from '../../Helper/toaster';
 import axios from 'axios';
@@ -733,13 +734,74 @@ const deleteItem = async (id) => {
 };
 
 const payByStripe = async () => {
+    let loading = null;
+    
     try {
-        const stripe = await loadStripe('pk_test_51MwQwJIqzT5sBDbDq2bKPnZUycLX9KLYAVUjVL6MyFh4xccFXjaC9vftaOIFQJGvoHdWcbfC7rDt6Y13OwzkDSyb00WRk2Iwpz');
-        const response = await axios.post('/api/stripe/payment', data.value);
-        window.location.href = response.data.url;
+        // Validate before showing loading state
+        if (!posData.value.length) {
+            ElMessage.error('Cannot process payment: Cart is empty');
+            return;
+        }
+        
+        if (totalAmount.value <= 0) {
+            ElMessage.error('Cannot process payment: Total amount must be greater than zero');
+            return;
+        }
+        
+        // Show loading state after validation passes
+        loading = ElLoading.service({
+            lock: true,
+            text: 'Processing payment...',
+            background: 'rgba(0, 0, 0, 0.7)'
+        });
+        
+        // Prepare minimal payment data
+        const paymentData = {
+            amount: totalAmount.value,
+            customer_id: data.value.customer_id,
+            items: posData.value.map(({ id, name, quantity, price }) => ({ 
+                id, name, quantity, price 
+            }))
+        };
+        
+        // Use the new dedicated endpoint
+        const { data: responseData } = await axios.post('/api/stripe/checkout', paymentData);
+        
+        if (!responseData?.url) {
+            throw new Error('Invalid response from payment server');
+        }
+        
+        // Store minimal transaction data for recovery
+        localStorage.setItem('pending_transaction', JSON.stringify({
+            type: 'stripe',
+            timestamp: Date.now(),
+            amount: totalAmount.value,
+            items: posData.value.length
+        }));
+        
+        // Redirect to Stripe checkout
+        window.location.href = responseData.url;
     } catch (error) {
         console.error('Error processing Stripe payment:', error);
-        toastr.error('Failed to process Stripe payment');
+        
+        // Provide specific error messages based on error type
+        const errorStatus = error.response?.status;
+        const errorMessage = error.response?.data?.error;
+        
+        if (errorStatus === 401) {
+            ElMessage.error('Authentication error: Please log in again');
+        } else if (errorStatus === 422) {
+            ElMessage.error(errorMessage || 'Validation error in payment data');
+        } else if (error.message.includes('Invalid response')) {
+            ElMessage.error('Payment server returned an invalid response');
+        } else {
+            ElMessage.error(errorMessage || 'Failed to process payment. Please try again.');
+        }
+    } finally {
+        // Always close loading if it was created
+        if (loading) {
+            loading.close();
+        }
     }
 };
 

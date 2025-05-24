@@ -4,17 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Pos;
 use App\Models\Product;
+use App\Services\StripeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Stripe\Checkout\Session;
-use Stripe\Exception\ApiErrorException;
-use Stripe\Stripe;
-use Stripe\Webhook;
-use Stripe\Exception\SignatureVerificationException;
+use Illuminate\Support\Facades\Log;
 
 class PosController extends Controller
 {
+    protected $stripeService;
+    
+    /**
+     * Constructor with dependency injection
+     */
+    public function __construct(StripeService $stripeService)
+    {
+        $this->stripeService = $stripeService;
+    }
+    
     /**
      * Display a listing of the resource.
      */
@@ -114,86 +121,62 @@ class PosController extends Controller
         //
     }
 
+    /**
+     * Process payment with Stripe
+     */
     public function payment(Request $request)
     {
         try {
-
-            // dd($request->all());
-            // Set the Stripe API key
-            Stripe::setApiKey(env('STRIPE_SK'));
-            // Stripe::setApiKey(config('stripe.sk'));
-    
-            // Create a new Stripe Checkout Session
-            $response = Session::create([
-                'payment_method_types' => ['card'],
-                'line_items' => [
-                    [
-                        'price_data' => [
-                            'currency' => 'usd',
-                            'unit_amount' => ($request->totalAmount) * 100, // Convert to cents
-                            'product_data' => [
-                                'name' => "test",
-                            ],
-                        ],
-                        'quantity' => 1,
-                    ]
-                ],
-                'mode' => 'payment',
-                'success_url' => route('stripe.success'), // Set your success URL
-                'cancel_url' => route('stripe.cancel'), // Set your cancel URL
+            // Validate the request
+            $validated = $request->validate([
+                'totalAmount' => 'required|numeric|min:0.01',
+                'items' => 'required|array',
+                'items.*.id' => 'required|integer',
+                'items.*.name' => 'required|string',
+                'items.*.quantity' => 'required|numeric|min:1',
+                'items.*.price' => 'required|numeric|min:0'
             ]);
-    
-            // Return the session ID to the frontend
-            return response()->json(['url' => $response->url]);
-        } catch (\Stripe\Exception\ApiErrorException $e) {
-            // Handle the error
+            
+            // Use the Stripe service to create a checkout session
+            $response = $this->stripeService->createCheckoutSession(
+                $request->totalAmount,
+                $request->items,
+                $request->customer_id ?? null
+            );
+            
+            return response()->json($response);
+        } catch (\Exception $e) {
+            Log::error('Payment Error: ' . $e->getMessage());
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
+    
+    /**
+     * Handle successful payment
+     */
     public function success()
     {
-        // return view('products.index'); // You can create a success blade template
         return redirect(route('products.index'));
     }
-
+    
+    /**
+     * Handle cancelled payment
+     */
     public function cancel()
     {
-        return redirect(route('orders.index')); // You can create a cancel blade template
+        return redirect(route('orders.index'));
     }
-
+    
+    /**
+     * Handle Stripe webhook
+     */
     public function handleWebhook(Request $request)
     {
-        Stripe::setApiKey(config('stripe.sk'));
-
-        $payload = $request->getContent();
-        $sig_header = $request->header('Stripe-Signature');
-        $endpoint_secret = config('stripe.webhook_secret');
-
         try {
-            $event = Webhook::constructEvent(
-                $payload, $sig_header, $endpoint_secret
-            );
-        } catch (\UnexpectedValueException $e) {
-            // Invalid payload
-            return response()->json(['error' => 'Invalid payload'], 400);
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            // Invalid signature
-            return response()->json(['error' => 'Invalid signature'], 400);
+            $response = $this->stripeService->handleWebhook($request);
+            return response()->json($response, 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        // Handle the event
-        switch ($event->type) {
-            case 'payment_intent.succeeded':
-                $paymentIntent = $event->data->object;
-                Log::info('PaymentIntent was successful!');
-                // Handle the successful payment here
-                break;
-            // Add other event types here
-            default:
-                return response()->json(['error' => 'Unhandled event type'], 400);
-        }
-
-        return response()->json(['status' => 'success'], 200);
     }
 }

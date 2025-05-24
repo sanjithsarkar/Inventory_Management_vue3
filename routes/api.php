@@ -12,6 +12,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\PayPalController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StripeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,10 +55,14 @@ Route::get('/today/income', 'App\Http\controllers\OrderController@todayIncome');
 Route::get('/today/due', 'App\Http\controllers\OrderController@todayDue');
 Route::get('/today/expense', 'App\Http\controllers\ExpenseController@todayExpense');
 Route::delete('/products', 'App\Http\controllers\ProductController@bulkDelete');
-Route::post('/stripe/payment', 'App\Http\controllers\PosController@payment');
-Route::get('/stripe/success', [PosController::class, 'success'])->name('stripe.success');
-Route::get('/stripe/cancel', [PosController::class, 'cancel'])->name('stripe.cancel');
-Route::post('/stripe/webhook', [PosController::class, 'handleWebhook']);
+// Stripe routes
+Route::post('/stripe/checkout', [StripeController::class, 'createCheckout']);
+Route::get('/stripe/success', [StripeController::class, 'success'])->name('stripe.success');
+Route::get('/stripe/cancel', [StripeController::class, 'cancel'])->name('stripe.cancel');
+Route::post('/stripe/webhook', [StripeController::class, 'handleWebhook']);
+
+// Keep the old route for backward compatibility
+Route::post('/stripe/payment', [PosController::class, 'payment']);
 Route::post('/paypal/payment', 'App\Http\controllers\PayPalController@payment')->name('paypal.payment');
 Route::get('/paypal/cancel', 'App\Http\controllers\PayPalController@cancel')->name('paypal.cancel');
 Route::get('/payment/success', 'App\Http\controllers\PayPalController@success')->name('paypal.success');
