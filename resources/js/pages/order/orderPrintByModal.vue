@@ -9,7 +9,7 @@
                     value-format="YYYY-MM-DD" />
             </el-space>
 
-            <el-input v-model="searchQuery" placeholder="Search by Order ID" clearable style="width: 240px"
+            <el-input v-model="searchQuery" placeholder="Search by Sales ID" clearable style="width: 240px"
                 @clear="getOrders">
                 <template #prefix>
                     <el-icon>
@@ -23,7 +23,7 @@
         <el-table :data="orderData" border stripe v-loading="loading" style="width: 100%"
             @sort-change="handleSortChange">
             <el-table-column type="index" width="60" label="No." />
-            <el-table-column prop="order_number" width="120" label="Order No" sortable />
+            <el-table-column prop="order_number" width="120" label="Sales No" sortable />
             <el-table-column label="Customer">
                 <template #default="{ row }">
                     {{ row.customer?.name || 'N/A' }}
@@ -86,7 +86,7 @@
         </div>
 
         <!-- Order Details Modal -->
-        <el-dialog v-model="isModalVisible" title="Order Details" width="80%" center :style="{ marginTop: '10vh' }">
+        <el-dialog v-model="isModalVisible" title="Sales Details" width="80%" center :style="{ marginTop: '10vh' }">
             <el-row :gutter="20">
                 <!-- Customer Info -->
                 <el-col :span="12">
@@ -108,7 +108,7 @@
                 <el-col :span="12">
                     <el-card>
                         <template #header>
-                            <h4>Order Summary</h4>
+                            <h4>Sales Summary</h4>
                         </template>
                         <el-descriptions border :column="1">
                             <el-descriptions-item label="Product Id">{{ orderProduct[0]?.pro_id
@@ -127,12 +127,12 @@
             <!-- Products -->
             <el-card class="mt-4">
                 <template #header>
-                    <h4>Order Products</h4>
+                    <h4>Sales Products</h4>
                 </template>
                 <el-table :data="order" border>
                     <el-table-column type="index" width="60" />
-                    <el-table-column prop="order_number" label="Product ID" />
-                    <el-table-column prop="quantity" label="Product Name" />
+                    <el-table-column prop="order_number" label="Sales ID" />
+                    <el-table-column prop="quantity" label="Quantity" />
                     <el-table-column prop="subTotal" label="SubTotal" />
                     <el-table-column prop="discount" label="Discount" />
                     <el-table-column prop="total" label="Total" />
@@ -170,7 +170,7 @@
                     <div class="invoice-title">
                         <h2>INVOICE</h2>
                         <div class="invoice-meta">
-                            <p><strong>Order #:</strong> {{ printableOrder?.order_number }}</p>
+                            <p><strong>Sales #:</strong> {{ printableOrder?.order_number }}</p>
                             <p><strong>Date:</strong> {{ printableOrder?.date }}</p>
                         </div>
                     </div>
@@ -189,7 +189,7 @@
 
                 <!-- Order Products -->
                 <section class="products-section" v-if="printableProducts.length">
-                    <div class="section-title">ORDER ITEMS</div>
+                    <div class="section-title">SALES ITEMS</div>
                     <table class="products-table">
                         <thead>
                             <tr>
@@ -305,7 +305,6 @@ onBeforeUnmount(() => clearTimeout(timeout.value))
 const selectedOrderId = ref(null)
 
 const openDialog = (id) => {
-    console.log('Order ID:', id)
     selectedOrderId.value = id
     dialogVisible.value = true
 }
@@ -347,7 +346,6 @@ const showModal = async (orderId) => {
         order.value = Array.isArray(orderRes.data) ? orderRes.data : [orderRes.data]
         orderProduct.value = Array.isArray(productsRes.data) ? productsRes.data : [productsRes.data]
         
-        console.log('Order:', order.value)
         isModalVisible.value = true
     } catch (error) {
         console.error('Error fetching order details:', error)
