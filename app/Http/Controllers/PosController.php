@@ -4,17 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Pos;
 use App\Models\Product;
+use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Stripe\Checkout\Session;
-use Stripe\Exception\ApiErrorException;
-use Stripe\Stripe;
-use Stripe\Webhook;
-use Stripe\Exception\SignatureVerificationException;
+use App\Services\Stripe\StripeService;
+use App\Helpers\PaymentHelper;
 
 class PosController extends Controller
 {
+    protected $stripeService;
+    
+    public function __construct(StripeService $stripeService)
+    {
+        $this->stripeService = $stripeService;
+    }
+    
     /**
      * Display a listing of the resource.
      */
@@ -116,21 +122,36 @@ class PosController extends Controller
 
     public function payment(Request $request)
     {
-        try {
+        // Validate the request
+        $validator = Validator::make($request->all(), [
+            'totalAmount' => 'required|numeric|min:0.01',
+        ]);
 
-            // dd($request->all());
-            // Set the Stripe API key
-            Stripe::setApiKey(env('STRIPE_SK'));
-            // Stripe::setApiKey(config('stripe.sk'));
-    
-            // Create a new Stripe Checkout Session
-            $response = Session::create([
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            // Get currency from settings or config
+            $currency = strtolower(Setting::get('currency_code', 'currency') ?? config('stripe.currency', 'usd'));
+            
+            // Convert amount to cents and ensure it's an integer
+            $originalAmount = $request->totalAmount;
+            $amountInCents = PaymentHelper::amountToCents($originalAmount);
+
+            Log::debug('Stripe payment amount conversion', [
+                'originalAmount' => $originalAmount,
+                'amountInCents' => $amountInCents,
+                'currency' => $currency
+            ]);
+            
+            $sessionData = [
                 'payment_method_types' => ['card'],
                 'line_items' => [
                     [
                         'price_data' => [
-                            'currency' => 'usd',
-                            'unit_amount' => ($request->totalAmount) * 100, // Convert to cents
+                            'currency' => $currency,
+                            'unit_amount' => $amountInCents,
                             'product_data' => [
                                 'name' => "test",
                             ],
@@ -139,13 +160,20 @@ class PosController extends Controller
                     ]
                 ],
                 'mode' => 'payment',
-                'success_url' => route('stripe.success'), // Set your success URL
-                'cancel_url' => route('stripe.cancel'), // Set your cancel URL
+                'success_url' => route('stripe.success'),
+                'cancel_url' => route('stripe.cancel'),
+            ];
+            
+            $session = $this->stripeService->createCheckoutSession($sessionData);
+            
+            // Return the session URL to the frontend
+            return response()->json(['url' => $session->url]);
+        } catch (\Exception $e) {
+            Log::error('Stripe Checkout Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
-    
-            // Return the session ID to the frontend
-            return response()->json(['url' => $response->url]);
-        } catch (\Stripe\Exception\ApiErrorException $e) {
+            
             // Handle the error
             return response()->json(['error' => $e->getMessage()], 500);
         }
