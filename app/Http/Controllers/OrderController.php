@@ -177,7 +177,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereIn('date', $yesterday)
+        $total = Order::where('date', $yesterday)
                     ->sum('total');
         return response()->json([
             'amount' => (float) $total,
@@ -192,7 +192,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereIn('date', $yesterday)
+        $total = Order::where('date', $yesterday)
                       ->sum('paid');
         
         return response()->json([
@@ -208,7 +208,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereIn('date', $yesterday)
+        $total = Order::where('date', $yesterday)
                    ->sum('due');
         
         return response()->json([
@@ -224,7 +224,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereIn('date', $yesterday)
+        $total = Order::where('date', $yesterday)
                        ->sum('expense');
         
         return response()->json([
