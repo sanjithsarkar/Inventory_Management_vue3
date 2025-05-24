@@ -94,7 +94,7 @@
                             <el-descriptions-item label="Discount (%)">
                                 <div class="discount-control">
                                     <el-input-number v-model="discount" :min="0" :max="100" size="default" controls-position="right" />
-                                    <span class="discount-amount">({{ formattedDiscountPayment }})</span>
+                                    <span class="discount-amount">{{ formattedDiscountPayment }}</span>
                                 </div>
                             </el-descriptions-item>
                             <el-descriptions-item label="Total Amount">
@@ -134,7 +134,7 @@
                                 <el-descriptions-item label="Payment Amount">
                                     <div class="payment-amount-container">
                                         <el-input-number
-                                            v-model="data.paymentReceive" 
+                                            v-model="paymentReceive" 
                                             :min="0" 
                                             :max="totalAmount" 
                                             :precision="2"
@@ -162,12 +162,12 @@
                                         {{ formattedRemainingPayment }}
                                     </el-tag>
                                 </el-descriptions-item>
-                                <input type="hidden" v-model="data.duePayment" />
                                 <input type="hidden" v-model="data.quantity" />
                                 <input type="hidden" v-model="data.subTotal" />
                                 <input type="hidden" v-model="data.discount" />
                                 <input type="hidden" v-model="data.discountPayment" />
                                 <input type="hidden" v-model="data.totalAmount" />
+                                <input type="hidden" v-model="data.paymentReceive" />
                                 <input type="hidden" v-model="data.duePayment" />
                                 <input type="hidden" v-model="data.price" />
                                 <el-descriptions-item label="Payment Method">

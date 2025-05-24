@@ -142,7 +142,7 @@ class OrderController extends Controller
 
     public function todaySale()
     {
-        $date = date('d/m/Y');
+        $date = Carbon::now()->format('Y/m/d');
         $sell = Order::where('date', $date)->sum('total');
         return response()->json($sell);
     }
@@ -151,7 +151,7 @@ class OrderController extends Controller
 
     public function todayIncome()
     {
-        $date = date('d/m/Y');
+        $date = Carbon::now()->format('Y/m/d');
         $income = Order::where('date', $date)->sum('paid');
         return response()->json($income);
     }
@@ -160,7 +160,7 @@ class OrderController extends Controller
 
     public function todayDue()
     {
-        $today = Carbon::now()->format('d/m/Y');
+        $today = Carbon::now()->format('Y/m/d');
         $due = Order::where('date', $today)->sum('due');
         return response()->json($due);
     }
@@ -177,7 +177,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereDate('created_at', $yesterday)
+        $total = Order::whereIn('date', $yesterday)
                     ->sum('total');
         return response()->json([
             'amount' => (float) $total,
@@ -192,7 +192,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereDate('created_at', $yesterday)
+        $total = Order::whereIn('date', $yesterday)
                       ->sum('paid');
         
         return response()->json([
@@ -208,7 +208,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereDate('created_at', $yesterday)
+        $total = Order::whereIn('date', $yesterday)
                    ->sum('due');
         
         return response()->json([
@@ -224,7 +224,7 @@ class OrderController extends Controller
     {
         $yesterday = $this->getYesterdayDate();
         
-        $total = Order::whereDate('created_at', $yesterday)
+        $total = Order::whereIn('date', $yesterday)
                        ->sum('expense');
         
         return response()->json([
