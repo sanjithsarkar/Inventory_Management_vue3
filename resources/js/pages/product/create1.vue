@@ -173,7 +173,7 @@ const handleRemoveImage = () => {
                         <el-form-item label="Supplier" :error="errors.supplier_id?.[0]">
                             <el-select v-model="form.supplier_id" placeholder="Select supplier" class="w-full"
                                 clearable>
-                                <el-option v-for="supplier in suppliersData" :key="supplier.id" :label="supplier.name"
+                                <el-option v-for="supplier in suppliersData.data" :key="supplier.id" :label="supplier.name"
                                     :value="supplier.id" />
                             </el-select>
                         </el-form-item>
