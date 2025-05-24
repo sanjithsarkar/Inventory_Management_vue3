@@ -422,7 +422,6 @@ const { formatCurrency, formatAmount } = useCurrency();
 
 // Fallback formatting functions in case the imported ones aren't working
 const fallbackFormatAmount = (amount) => {
-    console.log('Using fallback formatAmount');
   if (amount === null || amount === undefined) {
     amount = 0;
   }
@@ -573,7 +572,6 @@ const formattedTotalSubTotal = computed(() => {
   try {
     return formatCurrency(totalSubTotal.value);
   } catch (error) {
-    console.warn('Using fallback formatter for currency');
     return fallbackFormatCurrency(totalSubTotal.value);
   }
 });
@@ -582,7 +580,6 @@ const formattedDiscountPayment = computed(() => {
   try {
     return formatCurrency(discountPayment.value);
   } catch (error) {
-    console.warn('Using fallback formatter for currency');
     return fallbackFormatCurrency(discountPayment.value);
   }
 });
@@ -591,7 +588,6 @@ const formattedTotalAmount = computed(() => {
   try {
     return formatCurrency(totalAmount.value);
   } catch (error) {
-    console.warn('Using fallback formatter for currency');
     return fallbackFormatCurrency(totalAmount.value);
   }
 });
@@ -600,7 +596,6 @@ const formattedTotalAmount = computed(() => {
   try {
     return formatCurrency(remainingPayment.value);
   } catch (error) {
-    console.warn('Using fallback formatter for currency');
     return fallbackFormatCurrency(remainingPayment.value);
   }
 });
@@ -630,7 +625,6 @@ const getProducts = async () => {
             }
         })
         productData.value = response.data.data // Assuming paginated result
-        console.log('products', response.data)
         totalProducts.value = response.data.total // Backend should send this
     } catch (error) {
         console.error('Error fetching products:', error)
@@ -688,7 +682,6 @@ const addToCart = async (id) => {
 };
 
 const increaseQuantity = (id, dynamicTest, quantity) => {
-    console.log('test', dynamicTest);
     axios.get('/api/increase/cart/' + id, {
         params: {
             dynamic: dynamicTest,
